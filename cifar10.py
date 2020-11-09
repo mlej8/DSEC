@@ -94,6 +94,6 @@ for epoch_i in range(num_epochs):
 # done
 print("Finished Training")
 
-
+# save model
 PATH =  './models/{}.pth'.format(datetime.now().strftime("%Y-%b-%d-%H-%M-%S"))
 torch.save(net.state_dict(), PATH)

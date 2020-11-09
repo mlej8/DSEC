@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 from numpy import linalg as LA
 from scipy.spatial import distance
 
@@ -18,7 +19,7 @@ def compute_loss(D, ind_coef_matrix):
     for key in D:
         if key in ind_coef_matrix:
             # implementation of equation (12): L(r_ij, f(x_i;w) dot f(x_j;w))
-            torch.pow(torch.linalg.norm(torch.Tensor([D[key] - torch.dot(patterns[key[0]], patterns[key[1]])]), 2), 2)
+            loss += torch.pow(torch.linalg.norm(torch.Tensor([D[key] - torch.dot(patterns[key[0]], patterns[key[1]])]), 2), 2)
     return loss 
 
 def construct_dataset(patterns, u, l):
@@ -75,16 +76,16 @@ def dsec(patterns, dataloader, net):
             ind_coef_matrix = construct_indicator_coefficient_matrix(D)
 
             # QUESTION: update weights by minimizing (12) how?? optimizer.step()?
-            loss = 
+            loss = compute_loss(D, ind_coef_matrix)
 
-    # Last Step: Use true label to report predicted labels to get ACC.
-    # output clusters 
+    # output clusters and use true label to report predicted labels to get ACC.
     labels = []
     for pattern in patterns:
         ind_feature = net(pattern)
         index = torch.max(ind_feature, 0)
         labels.append(index)
 
+    return labels
 
 # QUESTION: how can we apply constraint at (3) to DNN ? 
 

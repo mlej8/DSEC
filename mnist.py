@@ -20,8 +20,6 @@ trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,shuffle=True, n
 testset = torchvision.datasets.MNIST(root='./mnistdata', train=False,download=True, transform=transform)
 testloader = torch.utils.data.DataLoader(testset, batch_size=4,shuffle=False, num_workers=2)
 
-print(trainset[0])
-
 ### NN
 class Net(nn.Module):
     def __init__(self):
