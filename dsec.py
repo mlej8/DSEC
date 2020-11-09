@@ -2,11 +2,6 @@ import numpy as np
 from numpy import linalg as LA
 from scipy.spatial import distance
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim # optimizers
-
 """
 @authors: Michael Li and William Zhang
 @email: er.li@mail.mcgill.ca 
@@ -14,7 +9,30 @@ import torch.optim as optim # optimizers
 @description: This file contains an implementation of Deep Self-Evolution Clustering algorithm in PyTorch
 """
 
-### Helper functions
+########################
+### Helper functions ###
+########################
+def compute_loss(D, ind_coef_matrix):
+    """ Objective function of DSEC """
+    loss = 0 
+    for key in D:
+        if key in ind_coef_matrix:
+            # implementation of equation (12): L(r_ij, f(x_i;w) dot f(x_j;w))
+            torch.pow(torch.linalg.norm(torch.Tensor([D[key] - torch.dot(patterns[key[0]], patterns[key[1]])]), 2), 2)
+    return loss 
+
+def construct_dataset(patterns, u, l):
+    """ 
+    Given an unlabeled dataset and the predefined number of clusters k, where x_i indicates the ith pattern, DSEC manages the clustering task by investigating similarities between pairwise patterns.
+    To consider similarities, we transform the dataset into a binary pairwise classification problem.
+    We turn a dataset into D = {{x_i, x_j, r_ij}} where x_i and x_j are unlabeled patterns (inputs) and r_ij is a binary variable which says x_i and x_j belong to the same cluster or not. 
+    """
+    size = len(patterns)
+    D = dict()
+    for i in range(size):
+        for j in range(i, size):
+            D[(i,j)] =  labeled_pairwise_patterns_selection(patterns[i], patterns[j], u, l)
+    return D
 
 def labeled_pairwise_patterns_selection(indicator_feature1, indicator_feature2, u, l):
     """ Implementation of the pairwise labelling algorithm described in the paper. """
@@ -28,69 +46,45 @@ def labeled_pairwise_patterns_selection(indicator_feature1, indicator_feature2, 
 def similarity_estimation(indicator_feature1, indicator_feature2):
     return distance.cosine(indicator_feature1, indicator_feature2)
 
-def dot_product(indicator_feature1, indicator_feature2):
-    """ 
-    DSEC measures the similarities via dot product between two indicator features  
-    This is basically g(x_i, x_j; w) (5)
-    """
-    return np.dot(indicator_feature1, indicator_feature2)
+def construct_indicator_coefficient_matrix(dataset):
+    ind_coef_matrix = dict()
+    for key in dataset:
+        if dataset[key] is not None:    
+            ind_coef_matrix[key] = 1
+    return ind_coef_matrix
 
-def loss(data):
-    """ Objective function of DSEC """
-    # n = len(data)
-    # for i in range(n):
-    #     for j in range(n):
-    #         v_ij = 1 if == 1 or == 0 else 0 
-    # loss between the binary variable r_ij and the estimated similarity g(x_i, x_j;w). Squared loss is employed
-    return torch.pow(torch.linalg.norm(torch.Tensor([y_true - y_pred]), 2), 2)
+def dsec(patterns, dataloader, net):
+    
+    # initialize variables
+    net = 0 # TODO: randomly initialize network's weights
+    num_clusters = patterns.labels # k the number of clusters
+    u = 0.95
+    l = 0.05
+    lr = 0.01
 
+    while not l > u:
+        for batch in dataloader:
 
-### DCNN
+            # QUESTION: should we get find all indicator features for each pattern here first? It would be something like a forward pass 
+            # output = net(batch)
 
-class Net(nn.Module):
-    """ Random DNN to learn indicator features """
-    def __init__(self):
-        super(Net, self).__init__()
-        # 1 input image channel, 6 output channels, 3x3 square convolution
-        # kernel
-        self.conv1 = nn.Conv2d(1, 6, 3)
-        self.conv2 = nn.Conv2d(6, 16, 3)
-        # an affine operation: y = Wx + b
-        self.fc1 = nn.Linear(16 * 6 * 6, 120)  # 6*6 from image dimension 
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+            # select training data from batch using formula (8), e.g. define labels for each indicator feature pair
+            D = construct_dataset(batch) # NOTE: DNN is shared 
 
-    def forward(self, x):
-        # Max pooling over a (2, 2) window
-        x = F.max_pool2d(F.relu(self.conv1(x)), (2, 2))
-        # If the size is a square you can only specify a single number
-        x = F.max_pool2d(F.relu(self.conv2(x)), 2)
-        x = x.view(-1, self.num_flat_features(x))
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
+            # compute indicator coefficient matrix for batch
+            ind_coef_matrix = construct_indicator_coefficient_matrix(D)
 
-    def num_flat_features(self, x):
-        size = x.size()[1:]  # all dimensions except the batch dimension
-        num_features = 1
-        for s in size:
-            num_features *= s
-        return num_features
+            # QUESTION: update weights by minimizing (12) how?? optimizer.step()?
+            loss = 
+
+    # Last Step: Use true label to report predicted labels to get ACC.
+    # output clusters 
+    labels = []
+    for pattern in patterns:
+        ind_feature = net(pattern)
+        index = torch.max(ind_feature, 0)
+        labels.append(index)
 
 
-### Weights update (optimizer)
-optimizer = optim.SGD(net.parmaeters(), lr=0.01)
+# QUESTION: how can we apply constraint at (3) to DNN ? 
 
-# in my training loop
-optimizer.zero_grad() # clear gradient buffers (set to zero), because gradients are accumulated
-output = net(input)
-loss = loss(output, target)
-loss.backward() 
-optimizer.step() # does the update
-
-# NOTE: how can we apply constraint at (3) to DNN ? 
-# Step 1: Use a random DNN to find indicator features for each pattern
-# Step 2: Define labels for each indicator feature pair
-# NOTE: DNN is shared 
-# Last Step: Use true label to report predicted labels to get ACC.
