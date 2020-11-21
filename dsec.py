@@ -71,15 +71,15 @@ def cp_constraint(indicator_feature, p):
 
 def weights_init(layer):
     """ initialize weights using normalized Gaussian initialization strategy """
-    # TODO implement this initialization strategy
-    if isinstance(layer, nn.Conv2d):
-        torch.nn.init.xavier_uniform_(layer.weight.data, gain=nn.init.calculate_gain('relu;))
-        if m.bias is not None:
+    # TODO implement guassian initialization strategy
+    if isinstance(layer, torch.nn.Conv2d):
+        torch.nn.init.xavier_uniform_(layer.weight.data, gain=torch.nn.init.calculate_gain('relu'))
+        if layer.bias is not None:
             torch.nn.init.zeros_(layer.bias.data)
 
-    if isinstance(layer, nn.Linear):
-        torch.nn.init.xavier_uniform_(layer.weight.data, gain=nn.init.calculate_gain('relu'))
-        if m.bias is not None:
+    if isinstance(layer, torch.nn.Linear):
+        torch.nn.init.xavier_uniform_(layer.weight.data, gain=torch.nn.init.calculate_gain('relu'))
+        if layer.bias is not None:
             torch.nn.init.zeros_(layer.bias.data)
 
 
@@ -100,9 +100,6 @@ def dsec(dataset, dnn):
     # initialize weights using normalized Gaussian initialization strategy 
     for layer in dnn:
         weights_init(layer)
-    
-    # In DSEC, the devised constraint layer is always applied to DNNs 
-    model = torch.nn.Sequential(dnn, cp_constraint)
 
     # load all the images
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,shuffle=True, num_workers=2)
