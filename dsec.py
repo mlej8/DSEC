@@ -14,16 +14,13 @@ import pickle
 ### Helper functions ###
 ########################
 
-def compute_loss(patterns, D, ind_coef_matrix, u, l):
+def compute_loss(patterns, D, u, l):
     """ Objective function of DSEC """
     # loss = torch.tensor(0., requires_grad=True)
     loss = 0
     for key in D:
-        if key in ind_coef_matrix:
-            # implementation of equation (12): L(r_ij, f(x_i;w) dot f(x_j;w))
-            estimated_similarity = torch.dot(patterns[key[0]], patterns[key[1]])
-            diff = D[key] - estimated_similarity
-            loss += torch.pow(torch.linalg.norm(diff, ord=2, dim=0), 2) + (u - l)
+        # implementation of equation (12): L(r_ij, f(x_i;w) dot f(x_j;w))
+        loss += torch.pow(torch.linalg.norm(D[key] - torch.dot(patterns[key[0]], patterns[key[1]]), ord=2, dim=0), 2) + (u - l)
     return loss 
 
 def construct_dataset(patterns, u, l):
@@ -36,29 +33,21 @@ def construct_dataset(patterns, u, l):
     D = dict()
     for i in range(size):
         for j in range(i+1, size):
-            # TODO modify this to only store 1/0 to save memory
-            D[(i,j)] =  labeled_pairwise_patterns_selection(patterns[i], patterns[j], u, l)
+            label = labeled_pairwise_patterns_selection(patterns[i], patterns[j], u, l)
+            if label is not None: 
+                D[(i,j)] =  label
     return D
 
 def labeled_pairwise_patterns_selection(indicator_feature1, indicator_feature2, u, l):
     """ Implementation of the pairwise labelling algorithm described in the paper. """
-    similarity = similarity_estimation(indicator_feature1, indicator_feature2)
+    # determine similarity between two labels to create label
+    similarity = torch.nn.CosineSimilarity(dim=0)(indicator_feature1, indicator_feature2)
     if similarity > u:
         return 1
     elif similarity <= l:
         return 0
     else:
         return None # similarity between x_i and x_j is ambiguous, thus this pair will be omitted during training
-
-def similarity_estimation(indicator_feature1, indicator_feature2):
-    return torch.nn.CosineSimilarity(dim=0)(indicator_feature1, indicator_feature2)
-
-def construct_indicator_coefficient_matrix(dataset):
-    ind_coef_matrix = dict()
-    for key in dataset:
-        if dataset[key] is not None:    
-            ind_coef_matrix[key] = 1
-    return ind_coef_matrix
 
 def cp_constraint(indicator_features, p):
     """ Implmentation of equation (11): c_p constraint """
@@ -99,7 +88,7 @@ def dsec(dataset, dnn):
     # initial variables
     num_clusters = len(dataset.classes) 
     u = 0.95
-    l = 0.05
+    l = 0.80
     batch_size = 32
     p = 1
 
@@ -131,11 +120,8 @@ def dsec(dataset, dnn):
             # construct pairwise similarities dataset, select training data from batch using formula (8), e.g. define labels for each indicator feature pair
             D = construct_dataset(output, u, l) # NOTE: DNN is shared 
 
-            # compute indicator coefficient matrix for batch 
-            ind_coef_matrix = construct_indicator_coefficient_matrix(D)
-
             # compute loss
-            loss = compute_loss(output, D, ind_coef_matrix, u, l)
+            loss = compute_loss(output, D, u, l)
 
             # accumulate loss
             total_loss += loss
