@@ -50,7 +50,7 @@ def labeled_pairwise_patterns_selection(indicator_feature1, indicator_feature2, 
         return None # similarity between x_i and x_j is ambiguous, thus this pair will be omitted during training
 
 def cp_constraint(indicator_features, p):
-    """ Implmentation of equation (11): c_p constraint """
+    """ Implementation of equation (11): c_p constraint """
     output = []
 
     for indicator_feature in indicator_features: 
@@ -104,6 +104,9 @@ def dsec(dataset, dnn):
     # define optimizer
     optimizer = torch.optim.RMSprop(dnn.parameters(),lr=lr)
 
+    # time tracker
+    start_time = datetime.now()
+
     while u >= l:
 
         # tracking total loss
@@ -137,7 +140,9 @@ def dsec(dataset, dnn):
                 print('Loss: {}\tIteration: {}'.format(total_loss/500, iteration))
                 total_loss = 0.0
 
-        print("Done with u ({}) and l ({})".format(u,l))
+        end_time = datetime.now()
+        print("Done with u ({}) and l ({}) in {}".format(u,l, end_time - start_time))
+        start_time = end_time
         # update u and l: s(u,l) = u - l
         u = u - lr
         l = l + lr
@@ -174,4 +179,6 @@ def dsec(dataset, dnn):
 
 # TODO Investigate the difference between using each batch to create indicator features or create at beginning.
 # TODO call evaluation funciton here ACC, NMI, etc. create a helper funciton to use true label to report predicted labels to get ACC.
-# TODO: optimizations of network's weights and u and l are alternating iterative performed. Question: What does this mean....???
+# TODO optimizations of network's weights and u and l are alternating iterative performed. Question: What does this mean....???
+# TODO move training to GPU
+# TODO add something to keep track of time during training .. 
