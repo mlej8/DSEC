@@ -85,6 +85,8 @@ def weights_init(layer):
 def dsec(dataset, dnn):
     """ Takes as input a PyTorch dataset and a DNN model """
     
+    cuda_available = torch.cuda.is_available()
+
     # initial variables
     num_clusters = len(dataset.classes) 
     u = 0.95
@@ -96,11 +98,14 @@ def dsec(dataset, dnn):
     for key in dnn._modules:
         weights_init(dnn._modules[key])
 
+    if cuda_available:
+        dnn.to("cuda")
+
     # load all the images
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,shuffle=True, num_workers=2)
 
     # learning rate
-    lr = 0.001
+    lr = 0.005
     # define optimizer
     optimizer = torch.optim.RMSprop(dnn.parameters(),lr=lr)
 
@@ -113,6 +118,10 @@ def dsec(dataset, dnn):
         total_loss = 0.0
 
         for iteration, (data,labels) in enumerate(dataloader):
+
+            if cuda_available:
+                # send data to gpu
+                data = data.to('cuda')
 
             # initialize indicator features (forward pass)
             output = dnn(data, p)
@@ -137,7 +146,7 @@ def dsec(dataset, dnn):
 
             # at every 500 mini-batch, print the loss
             if iteration % 500 == 499: 
-                print('Loss: {}\tIteration: {}'.format(total_loss/500, iteration))
+                print('Average batch loss: {}\tIteration: {}'.format(total_loss/500, iteration))
                 total_loss = 0.0
 
         end_time = datetime.now()
