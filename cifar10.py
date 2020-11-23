@@ -1,9 +1,8 @@
+from dsec import *
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
-
-from datetime import datetime
 
 import torchvision
 import torchvision.transforms as transforms
@@ -13,83 +12,57 @@ transform = transforms.Compose([transforms.ToTensor(), # transform to tensor
                                 transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)) # normalize range to [-1, 1]
                                 ])
 
-# 1. Load the CIFAR10 training and test datasets using torchvision
+# Load the CIFAR10 training and test datasets using torchvision
 trainset = torchvision.datasets.CIFAR10(root='./cifar10data', train=True, download=True, transform=transform)
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,shuffle=True, num_workers=2)
 
 # Load test set using torchvision
 testset = torchvision.datasets.CIFAR10(root='./cifar10data', train=False,download=True, transform=transform)
-testloader = torch.utils.data.DataLoader(testset, batch_size=4,shuffle=False, num_workers=2)
 
-# Classes of CIFAR10
-classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-
-dataiter = iter(trainloader)
-images, labels = dataiter.next()
-
-# 2. Define a Convolutional Neural Network
+###########
+### DNN ###
+###########
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(3, 6, 5)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+        # TODO add batch norm to each layer
+        # TODO Gaussian noise layer
+        # self.gaussian_noise = 
+        self.conv1 = nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3, stride=1)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.conv2 = nn.Conv2d(64, 64, 3)
+        self.conv3 = nn.Conv2d(64, 64, 3)
+        self.pooling1 = nn.MaxPool2d(2)
+        self.conv4 = nn.Conv2d(64, 128, 3) 
+        self.bn2 = nn.BatchNorm2d(128)
+        self.conv5 = nn.Conv2d(128, 128, 3)
+        self.conv6 = nn.Conv2d(128, 128, 3)
+        self.pooling2 = nn.MaxPool2d(2)
+        self.conv7 = nn.Conv2d(128, 10, 1) 
+        self.bn3 = nn.BatchNorm2d(10)
+        self.global_averaging = nn.AvgPool2d(3) # global averaging
+        self.fc1 = nn.Linear(in_features=10, out_features=10)
+        self.bn4 = nn.BatchNorm1d(10)
+        self.fc2 = nn.Linear(in_features=10, out_features=len(trainset.classes))
+        self.constraint_layer = cp_constraint
 
-    def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = x.view(-1, 16 * 5 * 5)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
+    def forward(self, x, p):
+        x = self.conv1(x)
+        x = F.relu(self.bn1(x))
+        x = self.conv2(x)
+        x = F.relu(self.bn1(x))
+        x = self.conv3(x)
+        x = F.relu(self.bn1(x))
+        x = self.bn1(self.pooling1(x))
+        x = F.relu(self.bn2(self.conv4(x)))
+        x = F.relu(self.bn2(self.conv5(x)))
+        x = F.relu(self.bn2(self.conv6(x)))
+        x = self.bn2(self.pooling2(x))
+        x = F.relu(self.bn3(self.conv7(x)))
+        x = self.bn3(self.global_averaging(x))
+        x = torch.flatten(x, 1)
+        x = F.relu(self.bn4(self.fc1(x)))
+        x = F.relu(self.bn4(self.fc2(x)))
+        output = self.constraint_layer(x,p)
+        return output
 
-# create the DCNN
-net = Net()
-
-# 3. Define a loss function
-criterion = nn.CrossEntryLoss() # TODO: replace this with custom loss
-
-# 4. Define an optimizer used to update the weights
-optimizer = optim.SGD(net.parameters, lr=0.001, momentum)
-
-# 5. Train the network
-num_epochs = 1
-for epoch_i in range(num_epochs):
-    
-    # tracking total loss
-    total_loss = 0.0
-    
-    for iteration, data in (trainloader): # loop over data iterator and feed the inputs to the netwrok and optimize
-        # get the inputs 
-        inputs, labels = data
-
-        # clear the parameter gradients
-        optimizer.zero_grad()
-
-        # forward pass 
-        outputs = net(inputs)
-
-        # get loss 
-        loss = criterion(outputs, labels)
-
-        # backward pass to get all gradients
-        loss.backward()
-
-        # update params
-        optimizer.step()
-
-        # total loss
-        total_loss += loss.item()
-
-        # at every 2000 mini-batch, print the loss
-        if iteration % 500 == 499: 
-            print('Epoch: {}\tLoss: {}\tIteration: {}'.format(epoch_i, total_loss/500, iteration))
-            
-            total_loss = 0.0
-
-# done
-print("Finished Training")
+dsec(trainset, Net())
