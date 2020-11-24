@@ -13,10 +13,10 @@ transform = transforms.Compose([transforms.ToTensor(), # transform to tensor
                                 ])
 
 # Load the CIFAR10 training and test datasets using torchvision
-trainset = torchvision.datasets.CIFAR10(root='./cifar10data', train=True, download=True, transform=transform)
+trainset = torchvision.datasets.CIFAR100(root='./cifar10data', train=True, download=True, transform=transform)
 
 # Load test set using torchvision
-testset = torchvision.datasets.CIFAR10(root='./cifar10data', train=False,download=True, transform=transform)
+testset = torchvision.datasets.CIFAR100(root='./cifar10data', train=False,download=True, transform=transform)
 
 ###########
 ### DNN ###
@@ -37,12 +37,12 @@ class Net(nn.Module):
         self.conv5 = nn.Conv2d(128, 128, 3)
         self.conv6 = nn.Conv2d(128, 128, 3)
         self.pooling2 = nn.MaxPool2d(2)
-        self.conv7 = nn.Conv2d(128, 10, 1) 
-        self.bn3 = nn.BatchNorm2d(10)
+        self.conv7 = nn.Conv2d(128, 20, 1) 
+        self.bn3 = nn.BatchNorm2d(20)
         self.global_averaging = nn.AvgPool2d(3) # global averaging
-        self.fc1 = nn.Linear(in_features=10, out_features=10)
-        self.bn4 = nn.BatchNorm1d(10)
-        self.fc2 = nn.Linear(in_features=10, out_features=len(trainset.classes))
+        self.fc1 = nn.Linear(in_features=20, out_features=20)
+        self.bn4 = nn.BatchNorm1d(20)
+        self.fc2 = nn.Linear(in_features=20, out_features=len(trainset.classes))
         self.constraint_layer = cp_constraint
 
     def forward(self, x, p):
@@ -56,7 +56,7 @@ class Net(nn.Module):
         x = F.relu(self.bn2(self.conv4(x)))
         x = F.relu(self.bn2(self.conv5(x)))
         x = F.relu(self.bn2(self.conv6(x)))
-        x = self.bn2(self.pooling2(x))
+        x = self.pooling2(x)
         x = F.relu(self.bn3(self.conv7(x)))
         x = self.bn3(self.global_averaging(x))
         x = torch.flatten(x, 1)
@@ -65,5 +65,4 @@ class Net(nn.Module):
         output = self.constraint_layer(x,p)
         return output
 
-# dsec(trainset, Net())
-nmi(trainset, Net(), "models/2020-Nov-23-07-19-35.pth")
+dsec(trainset, Net())

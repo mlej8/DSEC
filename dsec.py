@@ -2,7 +2,7 @@ import numpy as np
 from datetime import datetime
 import torch
 import pickle
-
+from sklearn import metrics
 """
 @authors: Michael Li and William Zhang
 @email: er.li@mail.mcgill.ca 
@@ -185,6 +185,88 @@ def dsec(dataset, dnn):
     print("{} out of {}".format(correct, outof))
 
     return dnn
+
+def acc(dataset,dnn, PATH):
+
+    # verify if cuda is available
+    use_cuda = torch.cuda.is_available()
+
+    # load model
+    dnn.load_state_dict(torch.load(PATH, map_location=torch.device('cpu'))) 
+
+    # initial variables
+    batch_size = 32
+    p = 1
+
+    if use_cuda:
+        dnn.to("cuda")
+
+    # load all the images
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,shuffle=True, num_workers=2)
+
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for data,labels in dataloader:
+
+            if use_cuda:    
+                # send data to gpu
+                data = data.to('cuda')
+                labels = labels.to('cuda')
+                
+            # clustering labels can be inferred via the learned indicator features purely, which are k-dimensional one-hot vectors ideally
+            indicator_features = dnn(data, p)
+            
+            # Take predictions
+            predicted = [torch.argmax(indicator_feature) for indicator_feature in indicator_features]
+
+            # keep track of total and correct predictions
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item() # BUG: solve here... 
+
+    print(f'Accuracy of the network on the {len(dataset)} test images: {100 * correct / total}')    
+    
+def nmi(dataset, dnn, PATH):
+
+    # verify if cuda is available
+    use_cuda = torch.cuda.is_available()
+
+    # load model
+    dnn.load_state_dict(torch.load(PATH, map_location=torch.device('cpu'))) 
+
+    # initial variables
+    batch_size = 32
+    p = 1
+
+    if use_cuda:
+        dnn.to("cuda")
+
+    # load all the images
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,shuffle=True, num_workers=2)
+
+    nmis = []
+    total = 0
+    with torch.no_grad():
+        for data,labels in dataloader:
+
+            if use_cuda:    
+                # send data to gpu
+                data = data.to('cuda')
+                labels = labels.to('cuda')
+                
+            # clustering labels can be inferred via the learned indicator features purely, which are k-dimensional one-hot vectors ideally
+            indicator_features = dnn(data, p)
+            
+            # Take predictions
+            predicted = [torch.argmax(indicator_feature) for indicator_feature in indicator_features]
+
+            # keep track of total and correct predictions
+            total += labels.size(0)
+            nmis.append(metrics.normalized_mutual_info_score(labels_true=labels, labels_pred=torch.tensor(predicted)))
+
+    # print(f'Accuracy of the network on the {len(dataset)} test images: {100 * correct / total}')    
+    print(f'Average nmi of the network on the {len(dataset)} test images: {sum(nmis)/len(nmis)}')    
+    
 
 # TODO Investigate the difference between using each batch to create indicator features or create at beginning.
 # TODO call evaluation funciton here ACC, NMI, etc. create a helper funciton to use true label to report predicted labels to get ACC.
