@@ -1,6 +1,9 @@
 # cache 
 __pycache__
 
+# logs
+logs/
+
 # Windows image file caches
 Thumbs.db
 ehthumbs.db

@@ -113,6 +113,9 @@ def dsec(dataset, dnn, model_name):
     # time tracker
     start_time = datetime.now()
 
+    # set epoch count 
+    epoch = 1
+
     while u >= l:
 
         # tracking total loss
@@ -151,8 +154,9 @@ def dsec(dataset, dnn, model_name):
                 total_loss = 0.0
 
         end_time = datetime.now()
-        print("u ({}) and l ({}) in {}".format(u,l, end_time - start_time))
+        print("Epoch {}: u ({}) and l ({}) in {}".format(epoch,u,l, end_time - start_time))
         start_time = end_time
+        epoch += 1
         
         # update u and l: s(u,l) = u - l
         u = u - lr
