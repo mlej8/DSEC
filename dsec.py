@@ -82,10 +82,10 @@ def weights_init(layer):
 ###  DSEC algorithm  ###
 ########################
 
-def dsec(dataset, dnn):
+def dsec(dataset, dnn, model_name):
     """ Takes as input a PyTorch dataset and a DNN model """
     
-    cuda_available = torch.cuda.is_available()
+    use_cu = torch.cuda.is_available()
 
     # initial variables
     num_clusters = len(dataset.classes) 
@@ -98,14 +98,15 @@ def dsec(dataset, dnn):
     for key in dnn._modules:
         weights_init(dnn._modules[key])
 
-    if cuda_available:
+    if use_cu:
         dnn.to("cuda")
+        print("Training on GPU!")
 
     # load all the images
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,shuffle=True, num_workers=2)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,shuffle=True, num_workers=4)
 
     # learning rate
-    lr = 0.005
+    lr = 0.001
     # define optimizer
     optimizer = torch.optim.RMSprop(dnn.parameters(),lr=lr)
 
@@ -119,15 +120,15 @@ def dsec(dataset, dnn):
 
         for iteration, (data,labels) in enumerate(dataloader):
 
-            if cuda_available:
+            # clear the parameter gradients
+            optimizer.zero_grad()
+
+            if use_cu:
                 # send data to gpu
                 data = data.to('cuda')
 
             # initialize indicator features (forward pass)
             output = dnn(data, p)
-
-            # clear the parameter gradients
-            optimizer.zero_grad()
 
             # construct pairwise similarities dataset, select training data from batch using formula (8), e.g. define labels for each indicator feature pair
             D = construct_dataset(output, u, l) # NOTE: DNN is shared 
@@ -146,45 +147,22 @@ def dsec(dataset, dnn):
 
             # at every 500 mini-batch, print the loss
             if iteration % 500 == 499: 
-                print('Average batch loss: {}\tIteration: {}'.format(total_loss/500, iteration))
+                print('Average batch loss: {}\tIteration: {}'.format(total_loss/500, iteration+1))
                 total_loss = 0.0
 
         end_time = datetime.now()
-        print("Done with u ({}) and l ({}) in {}".format(u,l, end_time - start_time))
+        print("u ({}) and l ({}) in {}".format(u,l, end_time - start_time))
         start_time = end_time
+        
         # update u and l: s(u,l) = u - l
         u = u - lr
         l = l + lr
 
     # save model
-    PATH =  './models/{}.pth'.format(datetime.now().strftime("%Y-%b-%d-%H-%M-%S"))
+    PATH =  './models/{0}-{1}.pth'.format(model_name, datetime.now().strftime("%Y-%b-%d-%H-%M-%S"))
     torch.save(dnn.state_dict(), PATH)
 
-    # output clusters
-    labels = []
-    for pattern in dataset.data:
-        
-        # clustering labels can be inferred via the learned indicator features purely, which are k-dimensional one-hot vectors ideally
-        indicator_feature = dnn(pattern)
-        
-        # patterns are clustered by locating the largest response of indicator feature
-        index = torch.argmax(indicator_feature)
-
-        labels.append(index)
-
-    # save predicted labels
-    with open("labels.pickle", "wb") as f:
-        pickle.dump(labels, f)
-
-    correct = 0
-    outof = len(dataset.targets)
-    for i, label in enumerate(labels):
-        if label == dataset.targets[i]:
-            correct += 1
-
-    print("{} out of {}".format(correct, outof))
-
-    return dnn
+    return PATH
 
 def acc(dataset,dnn, PATH):
 
@@ -232,7 +210,7 @@ def nmi(dataset, dnn, PATH):
     use_cuda = torch.cuda.is_available()
 
     # load model
-    dnn.load_state_dict(torch.load(PATH, map_location=torch.device('cpu'))) 
+    dnn.load_state_dict(torch.load(PATH)) 
 
     # initial variables
     batch_size = 32
@@ -273,3 +251,4 @@ def nmi(dataset, dnn, PATH):
 # TODO optimizations of network's weights and u and l are alternating iterative performed. Question: What does this mean....???
 # TODO move training to GPU
 # TODO add something to keep track of time during training .. 
+# TODO use logging for logs ?

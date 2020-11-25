@@ -43,6 +43,7 @@ class Net(nn.Module):
         self.fc1 = nn.Linear(in_features=20, out_features=20)
         self.bn4 = nn.BatchNorm1d(20)
         self.fc2 = nn.Linear(in_features=20, out_features=len(trainset.classes))
+        self.bn5 = nn.BatchNorm1d(100)
         self.constraint_layer = cp_constraint
 
     def forward(self, x, p):
@@ -61,8 +62,9 @@ class Net(nn.Module):
         x = self.bn3(self.global_averaging(x))
         x = torch.flatten(x, 1)
         x = F.relu(self.bn4(self.fc1(x)))
-        x = F.relu(self.bn4(self.fc2(x)))
+        x = F.relu(self.bn5(self.fc2(x)))
         output = self.constraint_layer(x,p)
         return output
 
-dsec(trainset, Net())
+model_path = dsec(trainset, Net(), "cifar100")
+nmi(trainset, Net(), model_path)

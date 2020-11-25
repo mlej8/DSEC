@@ -67,5 +67,5 @@ class Net(nn.Module):
         output = self.constraint_layer(x,p)
         return output
 
-# dsec(trainset, Net())
-nmi(trainset, Net(), "models/2020-Nov-23-14-57-35.pth")
+model_path = dsec(trainset, Net(), "mnist")
+nmi(trainset, Net(), model_path)

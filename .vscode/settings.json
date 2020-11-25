@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "/home/mlej8/projects/DSEC/dsec-env/bin/python3",
+    "python.pythonPath": "dsec-env/bin/python",
     "code-runner.executorMap": {
           "python": "$pythonPath -u $fullFileName",
         },
