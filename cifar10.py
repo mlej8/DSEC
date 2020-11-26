@@ -66,5 +66,6 @@ class Net(nn.Module):
         return output
 
 
-model_path = dsec(trainset, Net(), "cifar10")
-nmi(trainset, Net(), model_path)
+# model_path = dsec(trainset, Net(), "cifar10")
+# nmi(trainset, Net(), model_path)
+nmi(trainset, Net(), "models/2020-Nov-25-03-21-53.pth")

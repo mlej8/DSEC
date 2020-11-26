@@ -82,10 +82,10 @@ def weights_init(layer):
 ###  DSEC algorithm  ###
 ########################
 
-def dsec(dataset, dnn, model_name):
+def dsec(dataset, dnn, model_name, initialized=False):
     """ Takes as input a PyTorch dataset and a DNN model """
     
-    use_cu = torch.cuda.is_available()
+    use_cuda = torch.cuda.is_available()
 
     # initial variables
     num_clusters = len(dataset.classes) 
@@ -94,11 +94,12 @@ def dsec(dataset, dnn, model_name):
     batch_size = 32
     p = 1
 
-    # initialize weights using normalized Gaussian initialization strategy 
-    for key in dnn._modules:
-        weights_init(dnn._modules[key])
+    if not initialized:
+        # initialize weights using normalized Gaussian initialization strategy 
+        for key in dnn._modules:
+            weights_init(dnn._modules[key])
 
-    if use_cu:
+    if use_cuda:
         dnn.to("cuda")
         print("Training on GPU!")
 
@@ -126,7 +127,7 @@ def dsec(dataset, dnn, model_name):
             # clear the parameter gradients
             optimizer.zero_grad()
 
-            if use_cu:
+            if use_cuda:
                 # send data to gpu
                 data = data.to('cuda')
 
@@ -174,7 +175,10 @@ def acc(dataset,dnn, PATH):
     use_cuda = torch.cuda.is_available()
 
     # load model
-    dnn.load_state_dict(torch.load(PATH, map_location=torch.device('cpu'))) 
+    if use_cuda:
+        dnn.load_state_dict(torch.load(PATH)) 
+    else:
+        dnn.load_state_dict(torch.load(PATH, map_location=torch.device('cpu'))) 
 
     # initial variables
     batch_size = 32
@@ -188,6 +192,7 @@ def acc(dataset,dnn, PATH):
 
     correct = 0
     total = 0
+    
     with torch.no_grad():
         for data,labels in dataloader:
 
@@ -214,7 +219,10 @@ def nmi(dataset, dnn, PATH):
     use_cuda = torch.cuda.is_available()
 
     # load model
-    dnn.load_state_dict(torch.load(PATH)) 
+    if use_cuda:
+        dnn.load_state_dict(torch.load(PATH)) 
+    else:
+        dnn.load_state_dict(torch.load(PATH, map_location=torch.device('cpu'))) 
 
     # initial variables
     batch_size = 32
@@ -234,7 +242,6 @@ def nmi(dataset, dnn, PATH):
             if use_cuda:    
                 # send data to gpu
                 data = data.to('cuda')
-                labels = labels.to('cuda')
                 
             # clustering labels can be inferred via the learned indicator features purely, which are k-dimensional one-hot vectors ideally
             indicator_features = dnn(data, p)

@@ -13,10 +13,10 @@ transform = transforms.Compose([transforms.ToTensor(), # transform to tensor
                                 ])
 
 # Load the CIFAR10 training and test datasets using torchvision
-trainset = torchvision.datasets.CIFAR100(root='./cifar10data', train=True, download=True, transform=transform)
+trainset = torchvision.datasets.CIFAR100(root='./cifar100data', train=True, download=True, transform=transform)
 
 # Load test set using torchvision
-testset = torchvision.datasets.CIFAR100(root='./cifar10data', train=False,download=True, transform=transform)
+testset = torchvision.datasets.CIFAR100(root='./cifar100data', train=False,download=True, transform=transform)
 
 ###########
 ### DNN ###
@@ -68,3 +68,4 @@ class Net(nn.Module):
 
 model_path = dsec(trainset, Net(), "cifar100")
 nmi(trainset, Net(), model_path)
+# nmi(trainset, Net(), "models/cifar100-2020-Nov-25-03-48-11.pth")

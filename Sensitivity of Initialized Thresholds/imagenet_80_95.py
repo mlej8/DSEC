@@ -41,7 +41,7 @@ from keras.optimizers import RMSprop
 from keras.layers.advanced_activations import LeakyReLU
 from keras.models import load_model
 from sys import path
-path.append('/home/changjianlong/clustering')
+# path.append('/home/changjianlong/clustering')
 from myMetrics import *
 
 global upper, lower
