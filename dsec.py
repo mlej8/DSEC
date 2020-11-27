@@ -2,7 +2,6 @@ import numpy as np
 from datetime import datetime
 import torch
 import pickle
-from sklearn import metrics
 """
 @authors: Michael Li and William Zhang
 @email: er.li@mail.mcgill.ca 
@@ -19,8 +18,8 @@ def compute_loss(patterns, D, u, l):
     # loss = torch.tensor(0., requires_grad=True)
     loss = 0
     for key in D:
-        # implementation of equation (12): L(r_ij, f(x_i;w) dot f(x_j;w))
-        loss += torch.pow(torch.linalg.norm(D[key] - torch.dot(patterns[key[0]], patterns[key[1]]), ord=2, dim=0), 2) + (u - l)
+        # minimizing loss using equation (12)
+        loss += torch.pow(torch.linalg.norm(D[key] - torch.dot(patterns[key[0]], patterns[key[1]]), ord=2, dim=0), 2)
     return loss 
 
 def construct_dataset(patterns, u, l):
@@ -32,7 +31,7 @@ def construct_dataset(patterns, u, l):
     size = len(patterns)
     D = dict()
     for i in range(size):
-        for j in range(i+1, size):
+        for j in range(size):
             label = labeled_pairwise_patterns_selection(patterns[i], patterns[j], u, l)
             if label is not None: 
                 D[(i,j)] =  label
@@ -66,7 +65,7 @@ def cp_constraint(indicator_features, p):
     return output
 
 def weights_init(layer):
-    """ initialize weights using normalized Gaussian initialization strategy """
+    """ Initialize weights using normal initialization strategy """
     if isinstance(layer, torch.nn.Conv2d):
         torch.nn.init.normal_(layer.weight.data)
         if layer.bias is not None:
@@ -82,7 +81,7 @@ def weights_init(layer):
 ###  DSEC algorithm  ###
 ########################
 
-def dsec(dataset, dnn, model_name, initialized=False):
+def dsec(dataset, dnn, model_name, p=1, initialized=False):
     """ Takes as input a PyTorch dataset and a DNN model """
     
     use_cuda = torch.cuda.is_available()
@@ -92,7 +91,6 @@ def dsec(dataset, dnn, model_name, initialized=False):
     u = 0.95
     l = 0.80
     batch_size = 32
-    p = 1
 
     if not initialized:
         # initialize weights using normalized Gaussian initialization strategy 
@@ -167,99 +165,10 @@ def dsec(dataset, dnn, model_name, initialized=False):
     PATH =  './models/{0}-{1}.pth'.format(model_name, datetime.now().strftime("%Y-%b-%d-%H-%M-%S"))
     torch.save(dnn.state_dict(), PATH)
 
+    # returning the model path
     return PATH
-
-def acc(dataset,dnn, PATH):
-
-    # verify if cuda is available
-    use_cuda = torch.cuda.is_available()
-
-    # load model
-    if use_cuda:
-        dnn.load_state_dict(torch.load(PATH)) 
-    else:
-        dnn.load_state_dict(torch.load(PATH, map_location=torch.device('cpu'))) 
-
-    # initial variables
-    batch_size = 32
-    p = 1
-
-    if use_cuda:
-        dnn.to("cuda")
-
-    # load all the images
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,shuffle=True, num_workers=2)
-
-    correct = 0
-    total = 0
-    
-    with torch.no_grad():
-        for data,labels in dataloader:
-
-            if use_cuda:    
-                # send data to gpu
-                data = data.to('cuda')
-                labels = labels.to('cuda')
-                
-            # clustering labels can be inferred via the learned indicator features purely, which are k-dimensional one-hot vectors ideally
-            indicator_features = dnn(data, p)
-            
-            # Take predictions
-            predicted = [torch.argmax(indicator_feature) for indicator_feature in indicator_features]
-
-            # keep track of total and correct predictions
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item() # BUG: solve here... 
-
-    print(f'Accuracy of the network on the {len(dataset)} test images: {100 * correct / total}')    
-    
-def nmi(dataset, dnn, PATH):
-
-    # verify if cuda is available
-    use_cuda = torch.cuda.is_available()
-
-    # load model
-    if use_cuda:
-        dnn.load_state_dict(torch.load(PATH)) 
-    else:
-        dnn.load_state_dict(torch.load(PATH, map_location=torch.device('cpu'))) 
-
-    # initial variables
-    batch_size = 32
-    p = 1
-
-    if use_cuda:
-        dnn.to("cuda")
-
-    # load all the images
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,shuffle=True, num_workers=2)
-
-    nmis = []
-    total = 0
-    with torch.no_grad():
-        for data,labels in dataloader:
-
-            if use_cuda:    
-                # send data to gpu
-                data = data.to('cuda')
-                
-            # clustering labels can be inferred via the learned indicator features purely, which are k-dimensional one-hot vectors ideally
-            indicator_features = dnn(data, p)
-            
-            # Take predictions
-            predicted = [torch.argmax(indicator_feature) for indicator_feature in indicator_features]
-
-            # keep track of total and correct predictions
-            total += labels.size(0)
-            nmis.append(metrics.normalized_mutual_info_score(labels_true=labels, labels_pred=torch.tensor(predicted)))
-
-    # print(f'Accuracy of the network on the {len(dataset)} test images: {100 * correct / total}')    
-    print(f'Average nmi of the network on the {len(dataset)} test images: {sum(nmis)/len(nmis)}')    
-    
 
 # TODO Investigate the difference between using each batch to create indicator features or create at beginning.
 # TODO call evaluation funciton here ACC, NMI, etc. create a helper funciton to use true label to report predicted labels to get ACC.
-# TODO optimizations of network's weights and u and l are alternating iterative performed. Question: What does this mean....???
-# TODO move training to GPU
-# TODO add something to keep track of time during training .. 
+# TODO : parallelize some parts.. move training to GPU
 # TODO use logging for logs ?
