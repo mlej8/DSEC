@@ -173,7 +173,7 @@ def dsec(dataset, dnn, model_name, initialized=False):
     if not os.path.exists('./models'):
         os.makedirs("models")
     # save to cpu
-    torch.save(dnn.to("cpu").state_dict(), PATH)
+    torch.save(dnn.state_dict(), PATH)
 
     # returning the model path
     return PATH
