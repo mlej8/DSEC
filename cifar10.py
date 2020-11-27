@@ -62,5 +62,6 @@ class Net(nn.Module):
         return output
 
 model_name = "cifar10"
-model_path = dsec(trainset, Net(), model_name=model_name)
-cluster(trainset, Net(), model_path,model_name=model_name)
+# model_path = dsec(trainset, Net(), model_name=model_name)
+# cluster(trainset, Net(), model_path,model_name=model_name)
+cluster(trainset, Net(), "models/cifar10-2020-Nov-25-03-21-53.pth",model_name=model_name)
