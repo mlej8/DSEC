@@ -1,4 +1,5 @@
-from dsec import *
+from dsec import dsec, cp_constraint
+from unsupervised_metrics import cluster
 
 import torch
 import torch.nn as nn
@@ -46,7 +47,7 @@ class Net(nn.Module):
         self.bn5 = nn.BatchNorm1d(100)
         self.constraint_layer = cp_constraint
 
-    def forward(self, x, p):
+    def forward(self, x):
         x = self.conv1(x)
         x = F.relu(self.bn1(x))
         x = self.conv2(x)
@@ -63,9 +64,9 @@ class Net(nn.Module):
         x = torch.flatten(x, 1)
         x = F.relu(self.bn4(self.fc1(x)))
         x = F.relu(self.bn5(self.fc2(x)))
-        output = self.constraint_layer(x,p)
+        output = self.constraint_layer(x)
         return output
 
-model_path = dsec(trainset, Net(), "cifar100")
-nmi(trainset, Net(), model_path)
-# nmi(trainset, Net(), "models/cifar100-2020-Nov-25-03-48-11.pth")
+model_name= "cifar100"
+model_path = dsec(trainset, Net(), model_name=model_name)
+cluster(trainset, Net(), model_path, model_name=model_name)

@@ -1,6 +1,7 @@
 from __future__ import print_function
 
-from dsec import *
+from dsec import dsec, cp_constraint
+from unsupervised_metrics import cluster
 
 import torch
 import torch.nn as nn
@@ -26,9 +27,7 @@ testset = torchvision.datasets.MNIST(root='./mnistdata', train=False,download=Tr
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        # TODO add batch norm to each layer
-        # TODO Gaussian noise layer
-        # self.gaussian_noise = 
+        # TODO Gaussian noise layer self.gaussian_noise = 
         self.conv1 = nn.Conv2d(in_channels=1, out_channels=64, kernel_size=3, stride=1)
         self.bn1 = nn.BatchNorm2d(64)
         self.conv2 = nn.Conv2d(64, 64, 3)
@@ -47,13 +46,10 @@ class Net(nn.Module):
         self.fc2 = nn.Linear(in_features=10, out_features=len(trainset.classes))
         self.constraint_layer = cp_constraint
 
-    def forward(self, x, p):
-        x = self.conv1(x)
-        x = F.relu(self.bn1(x))
-        x = self.conv2(x)
-        x = F.relu(self.bn1(x))
-        x = self.conv3(x)
-        x = F.relu(self.bn1(x))
+    def forward(self, x):
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = F.relu(self.bn1(self.conv2(x)))
+        x = F.relu(self.bn1(self.conv3(x)))
         x = self.bn1(self.pooling1(x))
         x = F.relu(self.bn2(self.conv4(x)))
         x = F.relu(self.bn2(self.conv5(x)))
@@ -64,9 +60,9 @@ class Net(nn.Module):
         x = torch.flatten(x, 1)
         x = F.relu(self.bn4(self.fc1(x)))
         x = F.relu(self.bn4(self.fc2(x)))
-        output = self.constraint_layer(x,p)
+        output = self.constraint_layer(x)
         return output
 
-# model_path = dsec(trainset, Net(), "mnist")
-# nmi(trainset, Net(), model_path)
-nmi(trainset, Net(), "models/2020-Nov-25-05-02-44.pth")
+model_name = "mnist"
+model_path = dsec(trainset, Net(), model_name=model_name)
+cluster(trainset, Net(), model_path, model_name=model_name)

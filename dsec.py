@@ -1,7 +1,10 @@
 import numpy as np
 from datetime import datetime
 import torch
+import torch.nn as nn
 import pickle
+import os
+from params import *
 """
 @authors: Michael Li and William Zhang
 @email: er.li@mail.mcgill.ca 
@@ -13,7 +16,7 @@ import pickle
 ### Helper functions ###
 ########################
 
-def compute_loss(patterns, D, u, l):
+def compute_loss(patterns, D):
     """ Objective function of DSEC """
     # loss = torch.tensor(0., requires_grad=True)
     loss = 0
@@ -22,7 +25,7 @@ def compute_loss(patterns, D, u, l):
         loss += torch.pow(torch.linalg.norm(D[key] - torch.dot(patterns[key[0]], patterns[key[1]]), ord=2, dim=0), 2)
     return loss 
 
-def construct_dataset(patterns, u, l):
+def construct_dataset(patterns):
     """ 
     Given an unlabeled dataset and the predefined number of clusters k, where x_i indicates the ith pattern, DSEC manages the clustering task by investigating similarities between pairwise patterns.
     To consider similarities, we transform the dataset into a binary pairwise classification problem.
@@ -32,12 +35,12 @@ def construct_dataset(patterns, u, l):
     D = dict()
     for i in range(size):
         for j in range(size):
-            label = labeled_pairwise_patterns_selection(patterns[i], patterns[j], u, l)
+            label = labeled_pairwise_patterns_selection(patterns[i], patterns[j])
             if label is not None: 
                 D[(i,j)] =  label
     return D
 
-def labeled_pairwise_patterns_selection(indicator_feature1, indicator_feature2, u, l):
+def labeled_pairwise_patterns_selection(indicator_feature1, indicator_feature2):
     """ Implementation of the pairwise labelling algorithm described in the paper. """
     # determine similarity between two labels to create label
     similarity = torch.nn.CosineSimilarity(dim=0)(indicator_feature1, indicator_feature2)
@@ -48,7 +51,7 @@ def labeled_pairwise_patterns_selection(indicator_feature1, indicator_feature2, 
     else:
         return None # similarity between x_i and x_j is ambiguous, thus this pair will be omitted during training
 
-def cp_constraint(indicator_features, p):
+def cp_constraint(indicator_features):
     """ Implementation of equation (11): c_p constraint """
     output = []
 
@@ -81,31 +84,36 @@ def weights_init(layer):
 ###  DSEC algorithm  ###
 ########################
 
-def dsec(dataset, dnn, model_name, p=1, initialized=False):
+def dsec(dataset, dnn, model_name, initialized=False):
     """ Takes as input a PyTorch dataset and a DNN model """
     
-    use_cuda = torch.cuda.is_available()
+    # see if cuda available
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    # initial variables
+    # initial num of clusters
     num_clusters = len(dataset.classes) 
-    u = 0.95
-    l = 0.80
-    batch_size = 32
+    
+    # we are modifying global variable
+    global u
+    global l
 
     if not initialized:
         # initialize weights using normalized Gaussian initialization strategy 
         for key in dnn._modules:
             weights_init(dnn._modules[key])
 
-    if use_cuda:
-        dnn.to("cuda")
-        print("Training on GPU!")
+    # look if running multiple GPUs
+    num_gpus = torch.cuda.device_count()
+    if num_gpus > 1:
+        print("Using {} GPUs".format(num_gpus))
+        dnn = nn.DataParallel(dnn)
+    
+    # move network to appropriate device
+    dnn.to(device)
 
     # load all the images
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,shuffle=True, num_workers=4)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,shuffle=True, num_workers=num_workers)
 
-    # learning rate
-    lr = 0.001
     # define optimizer
     optimizer = torch.optim.RMSprop(dnn.parameters(),lr=lr)
 
@@ -125,18 +133,18 @@ def dsec(dataset, dnn, model_name, p=1, initialized=False):
             # clear the parameter gradients
             optimizer.zero_grad()
 
-            if use_cuda:
-                # send data to gpu
-                data = data.to('cuda')
+            # send data to correct device
+            data = data.to(device)
 
             # initialize indicator features (forward pass)
-            output = dnn(data, p)
+            output = dnn(data)
+            print("output")
 
             # construct pairwise similarities dataset, select training data from batch using formula (8), e.g. define labels for each indicator feature pair
-            D = construct_dataset(output, u, l) # NOTE: DNN is shared 
+            D = construct_dataset(output) # NOTE: DNN is shared 
 
             # compute loss
-            loss = compute_loss(output, D, u, l)
+            loss = compute_loss(output, D)
 
             # accumulate loss
             total_loss += loss
@@ -161,9 +169,11 @@ def dsec(dataset, dnn, model_name, p=1, initialized=False):
         u = u - lr
         l = l + lr
 
-    # save model
-    PATH =  './models/{0}-{1}.pth'.format(model_name, datetime.now().strftime("%Y-%b-%d-%H-%M-%S"))
-    torch.save(dnn.state_dict(), PATH)
+    # save model and create the models directory if not exist
+    PATH =  './models/{0}-{1}.pth'.format(model_name, datetime.now().strftime("%b-%d-%H-%M-%S"))
+    if not os.path.exists('./models'):
+        os.makedirs("models")
+    torch.save(dnn.to("cpu").state_dict(), PATH)
 
     # returning the model path
     return PATH
