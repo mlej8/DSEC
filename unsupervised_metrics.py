@@ -17,9 +17,6 @@ def cluster(dataset, dnn, PATH, model_name):
     dnn.load_state_dict(torch.load(PATH, map_location=torch.device("cpu")))
     dnn.to(device)
 
-    # # set bathcsize
-    # batch_size = 32
-
     # load all the images
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,shuffle=True, num_workers=num_workers)
 

@@ -138,7 +138,6 @@ def dsec(dataset, dnn, model_name, initialized=False):
 
             # initialize indicator features (forward pass)
             output = dnn(data)
-            print("output")
 
             # construct pairwise similarities dataset, select training data from batch using formula (8), e.g. define labels for each indicator feature pair
             D = construct_dataset(output) # NOTE: DNN is shared 
@@ -173,6 +172,7 @@ def dsec(dataset, dnn, model_name, initialized=False):
     PATH =  './models/{0}-{1}.pth'.format(model_name, datetime.now().strftime("%b-%d-%H-%M-%S"))
     if not os.path.exists('./models'):
         os.makedirs("models")
+    # save to cpu
     torch.save(dnn.to("cpu").state_dict(), PATH)
 
     # returning the model path
