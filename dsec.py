@@ -172,7 +172,11 @@ def dsec(dataset, dnn, model_name, initialized=False):
     PATH =  './models/{0}-{1}.pth'.format(model_name, datetime.now().strftime("%b-%d-%H-%M-%S"))
     if not os.path.exists('./models'):
         os.makedirs("models")
-    # save to cpu
+    # save state dict without module prefix appended
+    try:
+        state_dict = dnn.module.state_dict()
+    except AttributeError:
+        state_dict = dnn.state_dict()
     torch.save(dnn.state_dict(), PATH)
 
     # returning the model path
