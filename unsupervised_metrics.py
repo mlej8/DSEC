@@ -10,13 +10,13 @@ File containing evaluation metrics for DSEC.
 def cluster(dataset, dnn, PATH, model_name):
 
     # original saved file with DataParallel
-    state_dict = torch.load(PATH)
+    state_dict = torch.load(PATH, map_location=torch.device('cpu'))
     
     # create new OrderedDict that does not contain `module.`
     new_state_dict = OrderedDict()
     for k, v in state_dict.items():
         # remove `module.`prefix
-        name = k[7:] 
+        name = k.replace("module.", "")
         new_state_dict[name] = v
 
     # load params
@@ -24,9 +24,8 @@ def cluster(dataset, dnn, PATH, model_name):
 
     # see if cuda available
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-    # load model
-    dnn.load_state_dict(torch.load(PATH, map_location=torch.device('cpu')))
+    
+    # move model to appropriate device
     dnn.to(device)
 
     # load all the images
@@ -38,7 +37,7 @@ def cluster(dataset, dnn, PATH, model_name):
     with torch.no_grad():
 
         # get entire dataset 
-        data,labels = iter(dataloader).next()
+        data, labels = iter(dataloader).next()
 
         # move data to correct device
         data = data.to(device)

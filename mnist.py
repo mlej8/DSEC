@@ -66,4 +66,4 @@ class Net(nn.Module):
 model_name = "mnist"
 # model_path = dsec(trainset, Net(), model_name=model_name)
 # cluster(trainset, Net(), model_path, model_name=model_name)
-cluster(trainset, Net(), "models/mnist-2020-Nov-25-05-02-44.pth", model_name=model_name)
+cluster(trainset, Net(), "models/mnist-Nov-27-17-28-27.pth", model_name=model_name)
