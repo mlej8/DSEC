@@ -115,7 +115,7 @@ def dsec(dataset, dnn, model_name, initialized=False):
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,shuffle=True, num_workers=num_workers)
 
     # define optimizer
-    optimizer = torch.optim.RMSprop(dnn.parameters(),lr=lr)
+    optimizer = torch.optim.RMSprop(dnn.parameters(),lr=optimizer_lr)
 
     # time tracker
     start_time = datetime.now()
@@ -173,7 +173,7 @@ def dsec(dataset, dnn, model_name, initialized=False):
     if not os.path.exists('./models'):
         os.makedirs("models")
     
-    # save model state dict without module prefix
+    # save model state dict 
     try:
         state_dict = dnn.module.state_dict()
     except AttributeError:

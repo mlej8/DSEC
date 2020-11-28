@@ -13,11 +13,11 @@ transform = transforms.Compose([transforms.ToTensor(), # transform to tensor
                                 transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)) # normalize range to [-1, 1]
                                 ])
 
-# Load the CIFAR10 training and test datasets using torchvision
-trainset = torchvision.datasets.CIFAR10(root='./cifar10data', train=True, download=True, transform=transform)
+# Load training datasets using torchvision
+trainset = torchvision.datasets.STL10(root='./stl10data', split='train', download=True, transform=transform)
 
 # Load test set using torchvision
-testset = torchvision.datasets.CIFAR10(root='./cifar10data', train=False,download=True, transform=transform)
+testset = torchvision.datasets.STL10(root='./stl10data', split='test',download=True, transform=transform)
 
 ###########
 ### DNN ###
@@ -36,11 +36,16 @@ class Net(nn.Module):
         self.conv5 = nn.Conv2d(128, 128, 3)
         self.conv6 = nn.Conv2d(128, 128, 3)
         self.pooling2 = nn.MaxPool2d(2)
-        self.conv7 = nn.Conv2d(128, 10, 1) 
-        self.bn3 = nn.BatchNorm2d(10)
-        self.global_averaging = nn.AvgPool2d(3) # global averaging
+        self.conv7 = nn.Conv2d(128, 256, 3) 
+        self.bn3 = nn.BatchNorm2d(256)
+        self.conv8 = nn.Conv2d(256, 256, 3)
+        self.conv9 = nn.Conv2d(256, 256, 3)
+        self.pooling3 = nn.MaxPool2d(2)
+        self.conv10 = nn.Conv2d(256, 10, 1) 
+        self.bn4 = nn.BatchNorm2d(10)
+        self.global_averaging = nn.AvgPool2d(6) # global averaging
         self.fc1 = nn.Linear(in_features=10, out_features=10)
-        self.bn4 = nn.BatchNorm1d(10)
+        self.bn5 = nn.BatchNorm1d(10)
         self.fc2 = nn.Linear(in_features=10, out_features=len(trainset.classes))
         self.constraint_layer = cp_constraint
 
@@ -54,13 +59,17 @@ class Net(nn.Module):
         x = F.relu(self.bn2(self.conv6(x)))
         x = self.bn2(self.pooling2(x))
         x = F.relu(self.bn3(self.conv7(x)))
-        x = self.bn3(self.global_averaging(x))
+        x = F.relu(self.bn3(self.conv8(x)))
+        x = F.relu(self.bn3(self.conv9(x)))
+        x = self.bn3(self.pooling3(x))
+        x = F.relu(self.bn4(self.conv10(x)))
+        x = self.bn4(self.global_averaging(x))
         x = torch.flatten(x, 1)
-        x = F.relu(self.bn4(self.fc1(x)))
-        x = F.relu(self.bn4(self.fc2(x)))
+        x = F.relu(self.bn5(self.fc1(x)))
+        x = F.relu(self.bn5(self.fc2(x)))
         output = self.constraint_layer(x)
         return output
 
-model_name = "cifar10"
+model_name = "stl10"
 model_path = dsec(trainset, Net(), model_name=model_name)
-cluster(trainset, Net(), model_path, model_name=model_name)
+cluster(trainset, Net(), model_path,model_name=model_name)

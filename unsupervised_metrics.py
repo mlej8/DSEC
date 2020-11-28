@@ -8,22 +8,11 @@ from collections import OrderedDict
 File containing evaluation metrics for DSEC.
 """
 def cluster(dataset, dnn, PATH, model_name):
-
-    # original saved file with DataParallel
-    state_dict = torch.load(PATH, map_location=torch.device('cpu'))
-    
-    # create new OrderedDict that does not contain `module.`
-    new_state_dict = OrderedDict()
-    for k, v in state_dict.items():
-        # remove `module.`prefix
-        name = k.replace("module.", "")
-        new_state_dict[name] = v
-
-    # load params
-    dnn.load_state_dict(new_state_dict)
-
     # see if cuda available
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    # load params
+    dnn.load_state_dict(torch.load(PATH, map_location=torch.device('cpu')))
     
     # move model to appropriate device
     dnn.to(device)
@@ -56,3 +45,5 @@ def cluster(dataset, dnn, PATH, model_name):
     with open(PATH, "w") as f:
         f.write(f'Average NMI of DSEC {model_name}: {sum(nmis)/len(nmis)}\n')
         f.write(f'Average ARI of DSEC {model_name}: {sum(aris)/len(aris)}')  
+
+# TODO implement ACC
