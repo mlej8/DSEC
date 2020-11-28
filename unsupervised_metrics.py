@@ -29,32 +29,30 @@ def cluster(dataset, dnn, PATH, model_name):
     dnn.to(device)
 
     # load all the images
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=dataset.__len__(),shuffle=True, num_workers=num_workers)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,shuffle=True, num_workers=num_workers)
 
-    nmi = 0
-    ari = 0
+    nmis = []
+    aris = []
 
     with torch.no_grad():
+        for data, labels in dataloader:
 
-        # get entire dataset 
-        data, labels = iter(dataloader).next()
+            # move data to correct device
+            data = data.to(device)
+                    
+            # clustering labels can be inferred via the learned indicator features purely, which are k-dimensional one-hot vectors ideally
+            indicator_features = dnn(data)
+            
+            # Take predictions
+            predicted = [torch.argmax(indicator_feature) for indicator_feature in indicator_features]
 
-        # move data to correct device
-        data = data.to(device)
-                
-        # clustering labels can be inferred via the learned indicator features purely, which are k-dimensional one-hot vectors ideally
-        indicator_features = dnn(data)
-        
-        # Take predictions
-        predicted = [torch.argmax(indicator_feature) for indicator_feature in indicator_features]
-
-        nmi = metrics.normalized_mutual_info_score(labels_true=labels, labels_pred=predicted)
-        ari = metrics.adjusted_rand_score(labels_true=labels, labels_pred=predicted)
+            nmis.append(metrics.normalized_mutual_info_score(labels_true=labels, labels_pred=predicted))
+            aris.append(metrics.adjusted_rand_score(labels_true=labels, labels_pred=predicted))
 
     # save model and create the models directory if not exist
     PATH =  './results/{0}-{1}'.format(model_name, datetime.now().strftime("%b-%d-%H-%M-%S"))
     if not os.path.exists('./results'):
         os.makedirs("results")
     with open(PATH, "w") as f:
-        f.write(f'NMI of the network on the {len(dataset)} test images: {nmi}\n')
-        f.write(f'ARI of the network on the {len(dataset)} test images: {ari}')   
+        f.write(f'Average NMI of DSEC {model_name}: {sum(nmis)/len(nmis)}\n')
+        f.write(f'Average ARI of DSEC {model_name}: {sum(aris)/len(aris)}')  
