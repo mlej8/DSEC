@@ -1,7 +1,8 @@
 #!/bin/bash
+#SBATCH --gres=gpu:1              # Number of GPU(s) per node
 #SBATCH --cpus-per-task=2         # CPU cores/threads
-#SBATCH --mem-per-cpu=32G         # memory (per node)
-#SBATCH --time=00:15:00           # A time limit of zero requests that no time limit be imposed. Acceptable time formats include "minutes", "minutes:seconds", "hours:minutes:seconds", "days-hours", "days-hours:minutes" and "days-hours:minutes:seconds".
+#SBATCH --mem=16G                 # memory (per node)
+#SBATCH --time=00:10:00           # A time limit of zero requests that no time limit be imposed. Acceptable time formats include "minutes", "minutes:seconds", "hours:minutes:seconds", "days-hours", "days-hours:minutes" and "days-hours:minutes:seconds".
 #SBATCH --job-name=dsec         
 #SBATCH --output=logs/%x-validation-%j.out
 #SBATCH --mail-user=er.li@mail.mcgill.ca
