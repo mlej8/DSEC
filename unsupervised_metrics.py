@@ -41,7 +41,7 @@ def cluster(dataset, dnn, PATH, model_name):
             maximums, indices = torch.max(indicator_features, 1)
 
             labels.extend(batch_labels.numpy())
-            predictions.extend(maximums.to("cpu").numpy())
+            predictions.extend(indices.to("cpu").numpy())
     
     # transform to numpy array
     predictions = np.array(predictions)
@@ -64,14 +64,14 @@ def acc(labels, predictions):
     cm = metrics.confusion_matrix(labels, predictions)
 
     # transform confusion matrix into a cost matrix, because the linear_assignment minizes the cost
-    s = max(cm)
+    s = np.max(cm)
     cost_matrix = -cm + s
     
     # we run the linear sum assignment (finding minimum weight matching in bipartite graphs) problem on the cost matrix (graph)
     indexes = linear_sum_assignment(cost_matrix)
 
     # get the reordered labels
-    cluster_labels = [i[1] for i in sorted(indexes, key=lambda x: x[0])]
+    true_labels, cluster_labels = sorted(indexes, key=lambda x: x[0])
 
     # using best match to reorder mapping between predictions -> labels 
     reordered_cm = cm[:, cluster_labels]
