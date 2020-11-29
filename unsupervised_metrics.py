@@ -38,7 +38,7 @@ def cluster(dataset, dnn, PATH, model_name):
             maximums, indices = torch.max(indicator_features, 1)
 
             labels.extend(batch_labels.numpy())
-            predictions.extend(maximums.numpy())
+            predictions.extend(maximums.to("cpu").numpy())
     
     # compute metrics
     nmi = metrics.normalized_mutual_info_score(labels_true=labels, labels_pred=predictions)
@@ -49,8 +49,6 @@ def cluster(dataset, dnn, PATH, model_name):
     if not os.path.exists('./results'):
         os.makedirs("results")
     with open(PATH, "w") as f:
-        # f.write(f'Average NMI of DSEC {model_name}: {sum(nmis)/len(nmis)}\n')
-        # f.write(f'Average ARI of DSEC {model_name}: {sum(aris)/len(aris)}')  
         f.write(f'NMI of DSEC {model_name}: {nmi}\n')
         f.write(f'ARI of DSEC {model_name}: {ari}')  
 

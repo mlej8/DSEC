@@ -18,7 +18,6 @@ from params import *
 
 def compute_loss(patterns, D):
     """ Objective function of DSEC """
-    # loss = torch.tensor(0., requires_grad=True)
     loss = 0
     for key in D:
         # minimizing loss using equation (12)
