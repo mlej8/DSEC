@@ -25,9 +25,6 @@ testset = torchvision.datasets.CIFAR100(root='./cifar100data', train=False,downl
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        # TODO add batch norm to each layer
-        # TODO Gaussian noise layer
-        # self.gaussian_noise = 
         self.conv1 = nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3, stride=1)
         self.bn1 = nn.BatchNorm2d(64)
         self.conv2 = nn.Conv2d(64, 64, 3)
@@ -69,5 +66,5 @@ class Net(nn.Module):
 
 model_name= "cifar100"
 model_path= "models/cifar100-Nov-28-03-29-56.pth"
-# model_path = dsec(trainset, Net(), model_name=model_name)
+model_path = dsec(trainset, Net(), model_name=model_name)
 cluster(trainset, Net(), model_path, model_name=model_name)

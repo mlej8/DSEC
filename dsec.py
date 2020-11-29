@@ -182,8 +182,3 @@ def dsec(dataset, dnn, model_name, initialized=False):
 
     # returning the model path
     return PATH
-
-# TODO Investigate the difference between using each batch to create indicator features or create at beginning.
-# TODO call evaluation funciton here ACC, NMI, etc. create a helper funciton to use true label to report predicted labels to get ACC.
-# TODO : parallelize some parts.. move training to GPU
-# TODO use logging for logs ?
