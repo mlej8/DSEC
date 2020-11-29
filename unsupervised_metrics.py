@@ -4,6 +4,9 @@ from datetime import datetime
 import os
 from params import *
 from collections import OrderedDict
+import numpy as np
+from scipy.optimize import linear_sum_assignment
+
 """ 
 File containing evaluation metrics for DSEC.
 """
@@ -40,16 +43,38 @@ def cluster(dataset, dnn, PATH, model_name):
             labels.extend(batch_labels.numpy())
             predictions.extend(maximums.to("cpu").numpy())
     
-    # compute metrics
-    nmi = metrics.normalized_mutual_info_score(labels_true=labels, labels_pred=predictions)
-    ari = metrics.adjusted_rand_score(labels_true=labels, labels_pred=predictions)
+    # transform to numpy array
+    predictions = np.array(predictions)
+    labels = np.array(labels)
 
     # save model and create the models directory if not exist
     PATH =  './results/{0}-{1}'.format(model_name, datetime.now().strftime("%b-%d-%H-%M-%S"))
     if not os.path.exists('./results'):
         os.makedirs("results")
     with open(PATH, "w") as f:
-        f.write(f'NMI of DSEC {model_name}: {nmi}\n')
-        f.write(f'ARI of DSEC {model_name}: {ari}')  
+        f.write(f'NMI of DSEC {model_name}: {metrics.normalized_mutual_info_score(labels_true=labels, labels_pred=predictions)}\n')
+        f.write(f'ARI of DSEC {model_name}: {metrics.adjusted_rand_score(labels_true=labels, labels_pred=predictions)}')  
+        f.write(f'ACC of DSEC {model_name}: {acc(labels, predictions)}')  
 
-# TODO implement ACC
+def acc(labels, predictions):
+    """ Implementation of clustering accuracy """
+    assert len(predictions) == len(labels)
+
+    # build the confusion matrix
+    cm = metrics.confusion_matrix(labels, predictions)
+
+    # transform confusion matrix into a cost matrix, because the linear_assignment minizes the cost
+    s = max(cm)
+    cost_matrix = -cm + s
+    
+    # we run the linear sum assignment (finding minimum weight matching in bipartite graphs) problem on the cost matrix (graph)
+    indexes = linear_sum_assignment(cost_matrix)
+
+    # get the reordered labels
+    cluster_labels = [i[1] for i in sorted(indexes, key=lambda x: x[0])]
+
+    # using best match to reorder mapping between predictions -> labels 
+    reordered_cm = cm[:, cluster_labels]
+
+    # divide summation of diagonal by whole matrix sum
+    return np.trace(reordered_cm) / np.sum(reordered_cm)
