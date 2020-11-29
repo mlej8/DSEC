@@ -53,19 +53,20 @@ def labeled_pairwise_patterns_selection(indicator_feature1, indicator_feature2):
 
 def cp_constraint(indicator_features):
     """ Implementation of equation (11): c_p constraint """
-    output = []
+    
+    # get the max of each indicator feature
+    maximum = torch.max(indicator_features, 1)[0].reshape(len(indicator_features), -1)
 
-    for indicator_feature in indicator_features: 
-        # Find max value of indicator feature
-        maximum = torch.max(indicator_feature)
+    # expand the dimensions so that we can substract the indicator features
+    maximum = maximum.expand(-1, len(indicator_features[0]))
+    
+    # compute intermediate 
+    intermediate = torch.exp(indicator_features - maximum)
 
-        # Equation 11a: substract max value to all element of indicator feature and take the exponent 
-        intermediate = torch.exp(indicator_feature - maximum)
-        
-        #  equation 11b: divide every intermediate element by the p-norm of the intermediate feature vector
-        output.append(torch.div(intermediate, torch.linalg.norm(intermediate, ord=p)))
+    # compute ||I^tem||_p 
+    intermediate_norm = torch.linalg.norm(intermediate, ord=p, dim=1).reshape(len(indicator_features), -1)
 
-    return output
+    return torch.div(intermediate, intermediate_norm)
 
 def weights_init(layer):
     """ Initialize weights using normal initialization strategy """
