@@ -9,6 +9,7 @@ import torchvision
 import torchvision.transforms as transforms
 from sklearn.cluster import MiniBatchKMeans, KMeans
 from sklearn import metrics
+from unsupervised_metrics import acc
 
 """ Experiment with K-Means on MNIST """
 
@@ -50,6 +51,8 @@ with open(PATH, "w") as f:
     f.write("KMeans\n")
     f.write(f'NMI: {nmi}\n')
     f.write(f'ARI: {ari}\n')   
+    f.write(f'ACC: {acc(Y, labels)}\n')   
     f.write("MiniBatchKMeans\n")
     f.write(f'NMI: {mb_nmi}\n')
-    f.write(f'ARI: {mb_ari}')   
+    f.write(f'ARI: {mb_ari}\n')   
+    f.write(f'ACC: {acc(Y, mini_batch_labels)}')   

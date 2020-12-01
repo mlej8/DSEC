@@ -27,7 +27,6 @@ testset = torchvision.datasets.MNIST(root='./mnistdata', train=False,download=Tr
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        # TODO Gaussian noise layer self.gaussian_noise = 
         self.conv1 = nn.Conv2d(in_channels=1, out_channels=64, kernel_size=3, stride=1)
         self.bn1 = nn.BatchNorm2d(64)
         self.conv2 = nn.Conv2d(64, 64, 3)

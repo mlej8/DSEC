@@ -53,7 +53,7 @@ def cluster(dataset, dnn, PATH, model_name):
         os.makedirs("results")
     with open(PATH, "w") as f:
         f.write(f'NMI of DSEC {model_name}: {metrics.normalized_mutual_info_score(labels_true=labels, labels_pred=predictions)}\n')
-        f.write(f'ARI of DSEC {model_name}: {metrics.adjusted_rand_score(labels_true=labels, labels_pred=predictions)}')  
+        f.write(f'ARI of DSEC {model_name}: {metrics.adjusted_rand_score(labels_true=labels, labels_pred=predictions)}\n')  
         f.write(f'ACC of DSEC {model_name}: {acc(labels, predictions)}')  
 
 def acc(labels, predictions):
