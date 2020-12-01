@@ -87,6 +87,9 @@ def weights_init(layer):
 def dsec(dataset, dnn, model_name, initialized=False):
     """ Takes as input a PyTorch dataset and a DNN model """
     
+    # log which model we are running
+    print(f"Running DSEC on {model_name}")
+
     # see if cuda available
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
