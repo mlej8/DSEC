@@ -7,7 +7,7 @@ num_workers = 4
 p = 2
 
 # batch size
-batch_size = 32
+batch_size = 1000
 
 # upper threshold
 u = 0.99
