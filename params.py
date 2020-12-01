@@ -4,7 +4,7 @@
 num_workers = 4
 
 # p coefficient
-p = 1
+p = 2
 
 # batch size
 batch_size = 32

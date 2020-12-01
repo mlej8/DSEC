@@ -123,6 +123,9 @@ def dsec(dataset, dnn, model_name, initialized=False):
     # set epoch count 
     epoch = 1
 
+    # set dnn in training mode
+    dnn.train()
+
     while u >= l:
 
         # tracking total loss

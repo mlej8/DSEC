@@ -21,6 +21,9 @@ def cluster(dataset, dnn, PATH, model_name):
     # move model to appropriate device
     dnn.to(device)
 
+    # set dnn in evaluation mode
+    dnn.eval()
+
     # load all the images
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,shuffle=True, num_workers=num_workers)
 
