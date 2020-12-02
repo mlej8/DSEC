@@ -16,13 +16,10 @@ from params import *
 ### Helper functions ###
 ########################
 
-def compute_loss(patterns, D):
-    """ Objective function of DSEC """
-    loss = 0
-    for key in D:
-        # minimizing loss using equation (12)
-        loss += torch.pow(torch.linalg.norm(D[key] - torch.dot(patterns[key[0]], patterns[key[1]]), ord=2, dim=0), 2)
-    return loss 
+def compute_loss(label, indicator_feature1, indicator_feature2):
+    """ Compute loss for a pair of patterns. """
+    # implementation of equation (2)
+    return torch.pow(torch.linalg.norm(label - torch.dot(indicator_feature1, indicator_feature2), ord=2, dim=0), 2)
 
 def construct_dataset(patterns):
     """ 
@@ -130,8 +127,9 @@ def dsec(dataset, dnn, model_name, initialized=False):
 
         # tracking total loss
         total_loss = 0.0
+        batch_num = 1
 
-        for iteration, (data,labels) in enumerate(dataloader):
+        for data,labels in dataloader:
 
             # clear the parameter gradients
             optimizer.zero_grad()
@@ -145,25 +143,27 @@ def dsec(dataset, dnn, model_name, initialized=False):
             # construct pairwise similarities dataset, select training data from batch using formula (8), e.g. define labels for each indicator feature pair
             D = construct_dataset(output) # NOTE: DNN is shared 
 
-            # compute loss
-            loss = compute_loss(output, D)
+            # minimizing loss using equation (12)
+            for key in D:
+                
+                # compute loss
+                loss = compute_loss(D[key], output[key[0]], output[key[1]])
 
-            # accumulate loss
-            total_loss += loss
+                # accumulate loss
+                total_loss += loss
 
-            # backward pass to get all gradients
-            loss.backward()
+                # backward pass to get all gradients
+                loss.backward()
 
-            # weights are updated on each batch that is gradually sampled from the original dataset
-            optimizer.step()
-
-            # at every 500 mini-batch, print the loss
-            if iteration % 500 == 499: 
-                print('Average batch loss: {}\tIteration: {}'.format(total_loss/500, iteration+1))
-                total_loss = 0.0
+                # weights are updated on each pattern pair 
+                optimizer.step()
+            
+            print('Batch: {}\Loss: {}'.format(batch_num, total_loss/batch_size))
+            total_loss = 0.0
+            batch_num += 1
 
         end_time = datetime.now()
-        print("Epoch {}: u ({}) and l ({}) in {}".format(epoch,u,l, end_time - start_time))
+        print("Epoch {}: u ({}) and l ({}) done in {}".format(epoch,u,l, end_time - start_time))
         start_time = end_time
         epoch += 1
         
