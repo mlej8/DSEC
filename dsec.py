@@ -16,36 +16,10 @@ from params import *
 ### Helper functions ###
 ########################
 
-def compute_loss(label, indicator_feature1, indicator_feature2):
+def compute_loss(label, prediction):
     """ Compute loss for a pair of patterns. """
     # implementation of equation (2)
-    return torch.pow(torch.linalg.norm(label - torch.dot(indicator_feature1, indicator_feature2), ord=2, dim=0), 2)
-
-def construct_dataset(patterns):
-    """ 
-    Given an unlabeled dataset and the predefined number of clusters k, where x_i indicates the ith pattern, DSEC manages the clustering task by investigating similarities between pairwise patterns.
-    To consider similarities, we transform the dataset into a binary pairwise classification problem.
-    We turn a dataset into D = {{x_i, x_j, r_ij}} where x_i and x_j are unlabeled patterns (inputs) and r_ij is a binary variable which says x_i and x_j belong to the same cluster or not. 
-    """
-    size = len(patterns)
-    D = dict()
-    for i in range(size):
-        for j in range(size):
-            label = labeled_pairwise_patterns_selection(patterns[i], patterns[j])
-            if label is not None: 
-                D[(i,j)] =  label
-    return D
-
-def labeled_pairwise_patterns_selection(indicator_feature1, indicator_feature2):
-    """ Implementation of the pairwise labelling algorithm described in the paper. """
-    # determine similarity between two labels to create label
-    similarity = torch.nn.CosineSimilarity(dim=0)(indicator_feature1, indicator_feature2)
-    if similarity > u:
-        return 1
-    elif similarity <= l:
-        return 0
-    else:
-        return None # similarity between x_i and x_j is ambiguous, thus this pair will be omitted during training
+    return torch.pow(torch.linalg.norm(label - prediction, ord=2, dim=0), 2)
 
 def cp_constraint(indicator_features):
     """ Implementation of equation (11): c_p constraint """
@@ -143,15 +117,27 @@ def dsec(dataset, dnn, model_name, initialized=False):
             # initialize indicator features (forward pass)
             output = dnn(data)
 
-            # construct pairwise similarities dataset, select training data from batch using formula (8), e.g. define labels for each indicator feature pair
-            D = construct_dataset(output) # NOTE: DNN is shared 
+            # create a matrix of dot products
+            predictions = torch.mm(output, torch.transpose(output, 0, 1))
 
+            # construct pairwise similarities matrix
+            norms = torch.linalg.norm(output, ord=2, dim=1).reshape(len(output), -1)
+            norms_mm = torch.mm(norms, torch.transpose(norms, 0, 1))
+            similarity_matrix = torch.div(predictions,norms_mm)
+            
             # minimizing loss using equation (12)
-            for key in D:
-                
-                # compute loss
-                total_loss += compute_loss(D[key], output[key[0]], output[key[1]])
+            for i in range(len(similarity_matrix)):
+                for j in range(len(similarity_matrix)):
+                    
+                    # get similarity for pattern pair
+                    similarity = similarity_matrix[i][j]
 
+                    # pairwise labelling 
+                    if similarity > u:
+                        total_loss += compute_loss(1, predictions[i][j])
+                    elif similarity <= l:
+                        total_loss += compute_loss(0, predictions[i][j])
+                    
             # backward pass to get all gradients
             total_loss.backward()
 
