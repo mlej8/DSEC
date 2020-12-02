@@ -127,7 +127,7 @@ def dsec(dataset, dnn, model_name, initialized=False):
             
             # minimizing loss using equation (12)
             for i in range(len(similarity_matrix)):
-                for j in range(len(similarity_matrix)):
+                for j in range(i, len(similarity_matrix)):
                     
                     # get similarity for pattern pair
                     similarity = similarity_matrix[i][j]
@@ -141,10 +141,10 @@ def dsec(dataset, dnn, model_name, initialized=False):
             # backward pass to get all gradients
             total_loss.backward()
 
-            # weights are updated on each pattern pair 
+            # update weights
             optimizer.step()
             
-            print('Batch: {}\Loss: {}'.format(batch_num, total_loss/batch_size))
+            print('Batch: {}\tLoss: {}'.format(batch_num, total_loss/batch_size))
             total_loss = 0.0
             batch_num += 1
 
