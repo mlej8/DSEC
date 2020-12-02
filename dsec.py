@@ -150,16 +150,13 @@ def dsec(dataset, dnn, model_name, initialized=False):
             for key in D:
                 
                 # compute loss
-                loss = compute_loss(D[key], output[key[0]], output[key[1]])
+                total_loss += compute_loss(D[key], output[key[0]], output[key[1]])
 
-                # accumulate loss
-                total_loss += loss
+            # backward pass to get all gradients
+            total_loss.backward()
 
-                # backward pass to get all gradients
-                loss.backward()
-
-                # weights are updated on each pattern pair 
-                optimizer.step()
+            # weights are updated on each pattern pair 
+            optimizer.step()
             
             print('Batch: {}\Loss: {}'.format(batch_num, total_loss/batch_size))
             total_loss = 0.0
