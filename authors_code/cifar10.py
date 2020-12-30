@@ -306,10 +306,3 @@ else:
 #         cluster_l1.fit_generator(datagen.flow(X, Y, batch_size=32), 
 #                               nb_sample // 32,nb_epoch=100, verbose=2,validation_data=(X_test, Y_test))
 #==============================================================================
-
-
-
-
-
-
-
