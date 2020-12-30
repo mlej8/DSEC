@@ -183,19 +183,19 @@ if run == 'Clustering':
     ind = []
     output = []
     
-    Output = cluster_l1.predict(X_train)
-    y_pred = np.argmax(Output,axis = 1)
-    nmit = NMI(y_true,y_pred)
-    arit = ARI(y_true,y_pred)
-    acct, indt = ACC(y_true,y_pred)
-    model_weight_location = location.replace('.h5','/model_weight_epoch_{}.h5'.format(0))
-    cluster_l1.save_weights(model_weight_location)
-    print(nmit, arit, acct)
-    acc.append(acct)
-    ari.append(arit)
-    nmi.append(nmit)
-    ind.append(indt)
-    output.append(Output)
+    # Output = cluster_l1.predict(X_train)
+    # y_pred = np.argmax(Output,axis = 1)
+    # nmit = NMI(y_true,y_pred)
+    # arit = ARI(y_true,y_pred)
+    # acct, indt = ACC(y_true,y_pred)
+    # model_weight_location = location.replace('.h5','/model_weight_epoch_{}.h5'.format(0))
+    # cluster_l1.save_weights(model_weight_location)
+    # print(nmit, arit, acct)
+    # acc.append(acct)
+    # ari.append(arit)
+    # nmi.append(nmit)
+    # ind.append(indt)
+    # output.append(Output)
     
     index = np.arange(X_train.shape[0])
     index_loc = np.arange(nb)
@@ -216,13 +216,13 @@ if run == 'Clustering':
         
         if X_train.shape[0]>nb:
             for i in range(X_train.shape[0]//nb):
-                Xbatch = X_train[index[np.arange(i*nb,(i+1)*nb)]]
-                Y = cluster_l2.predict(Xbatch)
-                Ybatch = np.dot(Y,Y.T)
+                Xbatch = X_train[index[np.arange(i*nb,(i+1)*nb)]] # take a batch of nb 
+                Y = cluster_l2.predict(Xbatch) # indicator features
+                Ybatch = np.dot(Y,Y.T) # predictions
                 for k in range(nb_epoch):
                     np.random.shuffle(index_loc)
                     for j in range(Xbatch.shape[0]//batch_size):
-                        address = index_loc[np.arange(j*batch_size,(j+1)*batch_size)]
+                        address = index_loc[np.arange(j*batch_size,(j+1)*batch_size)] # taking sample of 32
                         X_batch = Xbatch[address]
                         Y_batch = Ybatch[address,:][:,address]
                         Y_ = Y[address]
