@@ -1,2 +1,3 @@
 ☐ TODO use logging for logs ?
 ☐ TODO Gaussian noise layer in front of each network...
+☐ Eliminate double four loop in the training phase and find way to optimize total_loss.backward
