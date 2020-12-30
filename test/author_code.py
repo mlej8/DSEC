@@ -6,6 +6,9 @@ Created on Sat Nov  5 16:46:33 2016
 
 from __future__ import print_function
 import os,sys
+os.environ['KERAS_BACKEND'] = 'theano'
+os.environ['THEANO_FLAGS']='mode=FAST_RUN,floatX=float32,optimizer=fast_compile'
+
 import numpy as np
 import h5py
 from keras.datasets import mnist,cifar10
@@ -125,7 +128,7 @@ print(run)
 #==============================================================================
 # X_train = np.transpose(X_train, (0,2,3,1))
 #==============================================================================
-inp_ = Input(shape=(img_channels, img_rows, img_cols))
+inp_ = Input(shape=(img_rows, img_cols,img_channels))
 x = Convolution2D(64,3,3,init = 'he_normal')(inp_)
 x = BatchNormalization(mode=2,axis = 1)(x)
 x = Activation('relu')(x)
@@ -146,20 +149,10 @@ x = Convolution2D(128,3,3,init = 'he_normal')(x)
 x = BatchNormalization(mode=2,axis = 1)(x)
 x = Activation('relu')(x)
 x = MaxPooling2D(pool_size = (2,2))(x)
-x = Convolution2D(256,3,3,init = 'he_normal')(x)
-x = BatchNormalization(mode=2,axis = 1)(x)
-x = Activation('relu')(x)
-x = Convolution2D(256,3,3,init = 'he_normal')(x)
-x = BatchNormalization(mode=2,axis = 1)(x)
-x = Activation('relu')(x)
-x = Convolution2D(256,3,3,init = 'he_normal')(x)
-x = BatchNormalization(mode=2,axis = 1)(x)
-x = Activation('relu')(x)
-x = MaxPooling2D(pool_size = (2,2))(x)
 x = Convolution2D(nb_classes, 1, 1,init = 'he_normal')(x)
 x = BatchNormalization(mode = 2,axis = 1)(x)
 x = Activation('relu')(x)
-x = AveragePooling2D(pool_size = (6,6))(x)
+x = AveragePooling2D(pool_size = (3,3))(x)
 x0 = Flatten()(x)
 x1 = Dense(nb_classes, init='he_normal')(x0)
 x1 = BatchNormalization(mode = 2)(x1)
