@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Sat Nov  5 16:46:33 2016
 
@@ -8,27 +6,13 @@ Created on Sat Nov  5 16:46:33 2016
 
 from __future__ import print_function
 import os,sys
-os.environ['KERAS_BACKEND'] = 'theano'
-os.environ['THEANO_FLAGS']='device=gpu5,lib.cnmem=1,mode=FAST_RUN,floatX=float32,optimizer=fast_compile'
-
-#==============================================================================
-# import os
-# os.environ['KERAS_BACKEND'] = 'tensorflow'
-# os.environ['CUDA_VISIBLE_DEVICES'] = '6'
-# os.environ['IMAGE_DIM_ORDERING'] = 'tf'
-# import tensorflow as tf
-# config = tf.ConfigProto()
-# config.gpu_options.per_process_gpu_memory_fraction = 0.3
-# tf.Session(config=config)
-#==============================================================================
-###STL good
 import numpy as np
 import h5py
 from keras.datasets import mnist,cifar10
 from keras.models import Sequential, Model
 from keras.layers import Dense, Activation, Flatten, Input
 from keras.layers import Dropout, merge, Lambda, Reshape, Convolution2D, MaxPooling2D
-from keras.layers import BatchNormalization, AveragePooling2D, Highway
+from keras.layers import BatchNormalization, AveragePooling2D
 from keras.utils import np_utils
 from keras import backend as K
 from keras.engine.topology import Layer
@@ -41,7 +25,6 @@ from keras.optimizers import RMSprop
 from keras.layers.advanced_activations import LeakyReLU
 from keras.models import load_model
 from sys import path
-# path.append('/home/changjianlong/clustering')
 from myMetrics import *
 
 global upper, lower
@@ -108,25 +91,24 @@ class CosineDist(Layer):
 
 #data
 nb_classes = 10
-img_channels, img_rows, img_cols = 3, 96, 96
-file = h5py.File('/home/changjianlong/datasets/ImageNet96.h5')
-X_train = file['X_train'][:]
-y_true = file['y_train'][:]
-y_true = y_true.astype('int64')
-file.close()
+img_channels, img_rows, img_cols = 3, 32, 32
+(X_train, y_true), (x_test, y_test) = cifar10.load_data()
 
-mean_image0 = np.mean(X_train[:,0,:,:])
-mean_image1 = np.mean(X_train[:,1,:,:])
-mean_image2 = np.mean(X_train[:,2,:,:])
-X_train[:,0,:,:] -= mean_image0
-X_train[:,1,:,:] -= mean_image1
-X_train[:,2,:,:] -= mean_image2
+X_train = X_train.astype('float32')
+
+mean_image0 = np.mean(X_train[:,:,:,0])
+mean_image1 = np.mean(X_train[:,:,:,1])
+mean_image2 = np.mean(X_train[:,:,:,2])
+X_train[:,:,:,0] -= mean_image0
+X_train[:,:,:,1] -= mean_image1
+X_train[:,:,:,2] -= mean_image2
 
 index = np.arange(X_train.shape[0])
 np.random.shuffle(index)
 X_train = X_train[index]
 y_true = y_true[index]
 tempmap = np.copy(index)
+
 #parameters
 batch_size = 32
 epoch = 50
@@ -136,9 +118,9 @@ lower = 0.8
 eta = (upper-lower)/epoch/2
 nb = 1000
 run = 'Clustering'
-#run = 'Classification'
 nb_samples = [500]
 print(run)
+
 #model
 #==============================================================================
 # X_train = np.transpose(X_train, (0,2,3,1))
@@ -192,7 +174,6 @@ norm_l2 = Model(input=[inp_], output=[x0])
 cluster_l1 = Model(input=[inp_], output=[y])
 cluster_l2 = Model(input=[inp_], output=[z])
 model = Model(input=[inp_], output=[z, dist])
-
 
 location = str(sys.argv[0])
 location = location.replace('.py','.h5')
