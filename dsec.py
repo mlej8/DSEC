@@ -127,7 +127,7 @@ def dsec(dataset, dnn, model_name, initialized=False):
             
             # minimizing loss using equation (12)
             for i in range(len(similarity_matrix)):
-                for j in range(len(similarity_matrix)):
+                for j in range(i, len(similarity_matrix)):
                     
                     # get similarity for pattern pair
                     similarity = similarity_matrix[i][j]
