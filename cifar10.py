@@ -10,6 +10,7 @@ import torch.nn.functional as F
 import torchvision
 import torchvision.transforms as transforms
 
+from custom_dataset import Dataset
 
 # Load the CIFAR10 training and test datasets using torchvision
 trainset = torchvision.datasets.CIFAR10(root='./cifar10data', train=True, download=True, transform=None)
@@ -33,27 +34,7 @@ transform = transforms.Compose([transforms.ToTensor(), # transform to tensor
                                 transforms.Normalize(means,variances) # normalize range to [-1, 1]
                                 ])
 
-# custom class
-class CIFAR10(torch.utils.data.Dataset):
-    def __init__(self, data, labels, transform=None):
-        self.labels = labels
-        self.data = data
-        self.transform = transform
-        self.classes = trainset.classes
-
-    def __len__(self):
-        """ Denotes the total number of samples """
-        return len(self.labels)
-    
-    def __getitem__(self, index):
-        'Generates one sample of data'
-        x = self.data[index]
-        y = self.labels[index]
-        if self.transform:
-            x = self.transform(x)
-        return (x, y)
-
-cifar10 = CIFAR10(data, labels, transform)
+cifar10 = Dataset(data, labels, trainset.classes, transform)
 
 ###########
 ### DNN ###
