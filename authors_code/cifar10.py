@@ -8,6 +8,7 @@ from __future__ import print_function
 import os,sys
 os.environ['KERAS_BACKEND'] = 'theano'
 os.environ['THEANO_FLAGS']='device=cuda,mode=FAST_RUN,floatX=float32,optimizer=fast_compile'
+os.environ["MKL_THREADING_LAYER"] = "GNU"
 
 import numpy as np
 import h5py
