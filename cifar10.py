@@ -1,6 +1,8 @@
 from dsec import dsec, cp_constraint
 from unsupervised_metrics import cluster
 
+import numpy as np
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -8,16 +10,50 @@ import torch.nn.functional as F
 import torchvision
 import torchvision.transforms as transforms
 
-# The output of torchvision datasets are PILImage images of range [0, 1]. We transform them to Tensors and normalize range to [-1, 1]. QUESTION: why?
-transform = transforms.Compose([transforms.ToTensor(), # transform to tensor
-                                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)) # normalize range to [-1, 1]
-                                ])
 
 # Load the CIFAR10 training and test datasets using torchvision
-trainset = torchvision.datasets.CIFAR10(root='./cifar10data', train=True, download=True, transform=transform)
+trainset = torchvision.datasets.CIFAR10(root='./cifar10data', train=True, download=True, transform=None)
 
 # Load test set using torchvision
-testset = torchvision.datasets.CIFAR10(root='./cifar10data', train=False,download=True, transform=transform)
+testset = torchvision.datasets.CIFAR10(root='./cifar10data', train=False,download=True, transform=None)
+
+# computing the mean and variance of each channel
+data = np.concatenate((trainset.data, testset.data), axis=0)
+labels = np.concatenate((trainset.targets, testset.targets), axis=0)
+means = (np.mean(data[:,:,:,0]),np.mean(data[:,:,:,1]),np.mean(data[:,:,:,2]))
+variances = (np.var(data[:,:,:,0]),np.var(data[:,:,:,1]),np.var(data[:,:,:,2]))
+
+"""
+The output of torchvision datasets are PILImage images of range [0, 1]. 
+We transform them to Tensors and normalize range to [-1, 1].
+However, we concatenated both train and test sets into one single dataset. 
+Therefore, we find the mean and variance for each channel and normalize. 
+"""
+transform = transforms.Compose([transforms.ToTensor(), # transform to tensor
+                                transforms.Normalize(means,variances) # normalize range to [-1, 1]
+                                ])
+
+# custom class
+class CIFAR10(torch.utils.data.Dataset):
+    def __init__(self, data, labels, transform=None):
+        self.labels = labels
+        self.data = data
+        self.transform = transform
+        self.classes = trainset.classes
+
+    def __len__(self):
+        """ Denotes the total number of samples """
+        return len(self.labels)
+    
+    def __getitem__(self, index):
+        'Generates one sample of data'
+        x = self.data[index]
+        y = self.labels[index]
+        if self.transform:
+            x = self.transform(x)
+        return (x, y)
+
+cifar10 = CIFAR10(data, labels, transform)
 
 ###########
 ### DNN ###
@@ -62,5 +98,5 @@ class Net(nn.Module):
 
 model_name = "cifar10"
 model_path = "models/cifar10-Nov-28-03-06-27.pth"
-model_path = dsec(trainset, Net(), model_name=model_name)
-cluster(trainset, Net(), model_path , model_name=model_name)
+model_path = dsec(cifar10, Net(), model_name=model_name)
+cluster(cifar10, Net(), model_path , model_name=model_name)

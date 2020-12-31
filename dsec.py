@@ -120,14 +120,14 @@ def dsec(dataset, dnn, model_name, initialized=False):
             # create a matrix of dot products
             predictions = torch.mm(output, torch.transpose(output, 0, 1))
 
-            # construct pairwise similarities matrix
+            # select training data from batch using eq. 8: construct pairwise similarities matrix
             norms = torch.linalg.norm(output, ord=2, dim=1).reshape(len(output), -1)
             norms_mm = torch.mm(norms, torch.transpose(norms, 0, 1))
             similarity_matrix = torch.div(predictions,norms_mm)
             
             # minimizing loss using equation (12)
             for i in range(len(similarity_matrix)):
-                for j in range(i, len(similarity_matrix)):
+                for j in range(len(similarity_matrix)):
                     
                     # get similarity for pattern pair
                     similarity = similarity_matrix[i][j]
