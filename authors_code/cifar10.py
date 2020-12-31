@@ -97,7 +97,12 @@ nb_classes = 10
 img_channels, img_rows, img_cols = 3, 32, 32
 (X_train, y_true), (x_test, y_test) = cifar10.load_data()
 
+# using the entire dataset
+X_train = np.concatenate((X_train, x_test), axis=0)
+y_true = np.concatenate((y_true, y_test), axis=0)
+
 X_train = X_train.astype('float32')
+y_true = y_true.astype('int64')
 
 mean_image0 = np.mean(X_train[:,:,:,0])
 mean_image1 = np.mean(X_train[:,:,:,1])
@@ -183,19 +188,19 @@ if run == 'Clustering':
     ind = []
     output = []
     
-    # Output = cluster_l1.predict(X_train)
-    # y_pred = np.argmax(Output,axis = 1)
-    # nmit = NMI(y_true,y_pred)
-    # arit = ARI(y_true,y_pred)
-    # acct, indt = ACC(y_true,y_pred)
-    # model_weight_location = location.replace('.h5','/model_weight_epoch_{}.h5'.format(0))
-    # cluster_l1.save_weights(model_weight_location)
-    # print(nmit, arit, acct)
-    # acc.append(acct)
-    # ari.append(arit)
-    # nmi.append(nmit)
-    # ind.append(indt)
-    # output.append(Output)
+    Output = cluster_l1.predict(X_train)
+    y_pred = np.argmax(Output,axis = 1)
+    nmit = NMI(y_true,y_pred)
+    arit = ARI(y_true,y_pred)
+    acct, indt = ACC(y_true,y_pred)
+    model_weight_location = location.replace('.h5','/model_weight_epoch_{}.h5'.format(0))
+    cluster_l1.save_weights(model_weight_location)
+    print(nmit, arit, acct)
+    acc.append(acct)
+    ari.append(arit)
+    nmi.append(nmit)
+    ind.append(indt)
+    output.append(Output)
     
     index = np.arange(X_train.shape[0])
     index_loc = np.arange(nb)
@@ -216,13 +221,13 @@ if run == 'Clustering':
         
         if X_train.shape[0]>nb:
             for i in range(X_train.shape[0]//nb):
-                Xbatch = X_train[index[np.arange(i*nb,(i+1)*nb)]] # take a batch of nb 
-                Y = cluster_l2.predict(Xbatch) # indicator features
-                Ybatch = np.dot(Y,Y.T) # predictions
+                Xbatch = X_train[index[np.arange(i*nb,(i+1)*nb)]]
+                Y = cluster_l2.predict(Xbatch)
+                Ybatch = np.dot(Y,Y.T)
                 for k in range(nb_epoch):
                     np.random.shuffle(index_loc)
                     for j in range(Xbatch.shape[0]//batch_size):
-                        address = index_loc[np.arange(j*batch_size,(j+1)*batch_size)] # taking sample of 32
+                        address = index_loc[np.arange(j*batch_size,(j+1)*batch_size)]
                         X_batch = Xbatch[address]
                         Y_batch = Ybatch[address,:][:,address]
                         Y_ = Y[address]
