@@ -104,6 +104,7 @@ y_true = np.concatenate((y_true, y_test), axis=0)
 
 X_train = X_train.astype('float32')
 y_true = y_true.astype('int64')
+y_true = y_true.flatten()
 
 mean_image0 = np.mean(X_train[:,:,:,0])
 mean_image1 = np.mean(X_train[:,:,:,1])
