@@ -100,6 +100,11 @@ def dsec(dataset, dnn, model_name, initialized=False):
     # set dnn in training mode
     dnn.train()
 
+    # create folder for storing weights if it does not exist
+    weights_folder = './models/{}/{}'.format(model_name, datetime.now().strftime("%b-%d-%H-%M-%S")) 
+    if not os.path.exists(weights_folder):
+        os.makedirs(weights_folder)
+
     while u >= l:
 
         # tracking total loss
@@ -151,16 +156,22 @@ def dsec(dataset, dnn, model_name, initialized=False):
         end_time = datetime.now()
         print("Epoch {}: u ({}) and l ({}) done in {}".format(epoch,u,l, end_time - start_time))
         start_time = end_time
-        epoch += 1
+
+        # save weights
+        PATH = weights_folder + "/epoch" + str(epoch) +  ".pth"
+        try:
+            state_dict = dnn.module.state_dict()
+        except AttributeError:
+            state_dict = dnn.state_dict()
+        torch.save(state_dict, PATH)
         
         # update u and l: s(u,l) = u - l
+        epoch += 1
         u = u - lr
         l = l + lr
 
     # save model and create the models directory if not exist
-    PATH =  './models/{0}-{1}.pth'.format(model_name, datetime.now().strftime("%b-%d-%H-%M-%S"))
-    if not os.path.exists('./models'):
-        os.makedirs("models")
+    PATH =  weights_folder + '/{0}.pth'.format(model_name)
     
     # save model state dict 
     try:
