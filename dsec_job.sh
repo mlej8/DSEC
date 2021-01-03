@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --gres=gpu:8              # Number of GPU(s) per node
+#SBATCH --gres=gpu:4              # Number of GPU(s) per node
 #SBATCH --cpus-per-task=4         # CPU cores/threads
 #SBATCH --mem=32G                 # memory
 #SBATCH --time=7-0                # A time limit of zero requests that no time limit be imposed. Acceptable time formats include "minutes", "minutes:seconds", "hours:minutes:seconds", "days-hours", "days-hours:minutes" and "days-hours:minutes:seconds".
