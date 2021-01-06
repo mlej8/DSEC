@@ -132,7 +132,7 @@ def dsec(dataset, dnn, model_name, initialized=False):
             
             # minimizing loss using equation (12)
             for i in range(len(similarity_matrix)):
-                for j in np.concatenate((np.random.choice(1000,size=310,replace=False),np.asarray([i]*nb_epochs)), axis=0):                    
+                for j in range(len(similarity_matrix)):
                     
                     # get similarity for pattern pair
                     similarity = similarity_matrix[i][j]
