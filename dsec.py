@@ -100,6 +100,9 @@ def dsec(dataset, dnn, model_name, initialized=False):
     # set dnn in training mode
     dnn.train()
 
+    # create BCE loss (does not follow paper but follows their code)
+    loss = nn.BCELoss()
+
     # create folder for storing weights if it does not exist
     weights_folder = './models/{}/{}'.format(model_name, datetime.now().strftime("%b-%d-%H-%M-%S")) 
     if not os.path.exists(weights_folder):
@@ -108,7 +111,7 @@ def dsec(dataset, dnn, model_name, initialized=False):
     while u >= l:
 
         # tracking total loss
-        total_loss = 0.0
+        total_loss = 0.0 #torch.tensor(0.0, requires_grad=True)
         batch_num = 1
 
         for data,labels in dataloader:
@@ -132,16 +135,15 @@ def dsec(dataset, dnn, model_name, initialized=False):
             
             # minimizing loss using equation (12)
             for i in range(len(similarity_matrix)):
-                for j in np.concatenate((np.random.choice(1000,size=310,replace=False),np.asarray([i]*nb_epochs)), axis=0):                    
-                    
+                for j in range(i, len(similarity_matrix)):                    
                     # get similarity for pattern pair
                     similarity = similarity_matrix[i][j]
 
                     # pairwise labelling 
                     if similarity > u:
-                        total_loss += compute_loss(1, predictions[i][j])
+                        total_loss += loss(torch.clamp(predictions[i][j],0,1), torch.tensor(1.0)) #compute_loss(1, predictions[i][j])
                     elif similarity <= l:
-                        total_loss += compute_loss(0, predictions[i][j])
+                        total_loss += loss(predictions[i][j], torch.tensor(0.0)) #compute_loss(0, predictions[i][j])
                     
             # backward pass to get all gradients
             total_loss.backward()

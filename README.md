@@ -6,6 +6,9 @@ A general clustering method for speech, image and text clustering.
 2. Activate virtual environment: source dsec-env/Scripts/activate or source dsec-env/bin/activate for Linux
 3. Install dependencies using pip install -r requirements.txt
 
+If there are issues installing pytorch versions, use the following command
+`pip install torch===1.7.0+cu110 torchvision==0.8.1+cu110 torchaudio==0.7.0 -f https://download.pytorch.org/whl/torch_stable.html`
+
 ## Bibtex
 Credits to original author: Jianlong Chang (jianlong.chang@nlpr.ia.ac.cn)
 ```
