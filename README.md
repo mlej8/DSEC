@@ -9,6 +9,12 @@ A general clustering method for speech, image and text clustering.
 If there are issues installing pytorch versions, use the following command
 `pip install torch===1.7.0+cu110 torchvision==0.8.1+cu110 torchaudio==0.7.0 -f https://download.pytorch.org/whl/torch_stable.html`
 
+# Compute Canada Commands
+
+In order to see current jobs in the queue: `sq`
+In oder to add a job to the queue: `sbatch <bash script> <python script as argument to the batch script>`
+
+
 ## Bibtex
 Credits to original author: Jianlong Chang (jianlong.chang@nlpr.ia.ac.cn)
 ```
