@@ -59,7 +59,7 @@ def dsec(dataset, dnn, model_name, initialized=False):
     """ Takes as input a PyTorch dataset and a DNN model """
     
     # log which model we are running
-    print(f"Running DSEC on {model_name}")
+    print(f"Running DSEC on {model_name}.\nStarted experiment on {datetime.now().strftime('%b-%d-%H-%M-%S')}")
 
     # see if cuda available
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -84,6 +84,10 @@ def dsec(dataset, dnn, model_name, initialized=False):
     
     # move network to appropriate device
     dnn.to(device)
+
+    # labels
+    one = torch.tensor(1.).to(device)
+    zero = torch.tensor(0.).to(device)
 
     # load all the images
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,shuffle=True, num_workers=num_workers)
@@ -111,7 +115,7 @@ def dsec(dataset, dnn, model_name, initialized=False):
     while u >= l:
 
         # tracking total loss
-        total_loss = 0.0 #torch.tensor(0.0, requires_grad=True)
+        total_loss = 0.0
         batch_num = 1
 
         for data,labels in dataloader:
@@ -126,7 +130,7 @@ def dsec(dataset, dnn, model_name, initialized=False):
             output = dnn(data)
 
             # create a matrix of dot products
-            predictions = torch.mm(output, torch.transpose(output, 0, 1))
+            predictions = torch.clamp(torch.mm(output, torch.transpose(output, 0, 1)), 0 , 1) # added clamp function to make sure that predictions are between [0,1]
 
             # select training data from batch using eq. 8: construct pairwise similarities matrix
             norms = torch.linalg.norm(output, ord=2, dim=1).reshape(len(output), -1)
@@ -141,9 +145,9 @@ def dsec(dataset, dnn, model_name, initialized=False):
 
                     # pairwise labelling 
                     if similarity > u:
-                        total_loss += loss(torch.clamp(predictions[i][j],0,1), torch.tensor(1.0)) #compute_loss(1, predictions[i][j])
+                        total_loss += loss(predictions[i][j], one)
                     elif similarity <= l:
-                        total_loss += loss(predictions[i][j], torch.tensor(0.0)) #compute_loss(0, predictions[i][j])
+                        total_loss += loss(predictions[i][j], zero)
                     
             # backward pass to get all gradients
             total_loss.backward()
