@@ -85,6 +85,10 @@ def dsec(dataset, dnn, model_name, initialized=False):
     # move network to appropriate device
     dnn.to(device)
 
+    # labels
+    one = torch.tensor(1.).to(device)
+    zero = torch.tensor(0.).to(device)
+
     # load all the images
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,shuffle=True, num_workers=num_workers)
 
@@ -141,9 +145,9 @@ def dsec(dataset, dnn, model_name, initialized=False):
 
                     # pairwise labelling 
                     if similarity > u:
-                        total_loss += loss(predictions[i][j], torch.tensor(1.))
+                        total_loss += loss(predictions[i][j], one)
                     elif similarity <= l:
-                        total_loss += loss(predictions[i][j], torch.tensor(0.))
+                        total_loss += loss(predictions[i][j], zero)
                     
             # backward pass to get all gradients
             total_loss.backward()
