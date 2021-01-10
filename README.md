@@ -15,6 +15,7 @@ In order to see current jobs in the queue: `sq`
 
 In order to add a job to the queue: `sbatch <bash script> <python script to pass as argument to the batch script>`
 
+In order to cancel a job in the queue: `scancel <job_id>`
 
 ## Bibtex
 Credits to original author: Jianlong Chang (jianlong.chang@nlpr.ia.ac.cn)

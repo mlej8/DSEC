@@ -119,6 +119,7 @@ tempmap = np.copy(index)
 
 #parameters
 batch_size = 32
+start_epoch = 0 # This will get modified later if the run was stopped mid-way
 epoch = 50
 nb_epoch = 10
 upper = 0.95
@@ -182,29 +183,52 @@ if not os.path.exists(weight_path):
     os.makedirs(weight_path)
 
 if run == 'Clustering':
-    acc = []
-    ari = []
-    nmi = []
-    ind = []
-    output = []
-    
-    Output = cluster_l1.predict(X_train)
-    y_pred = np.argmax(Output,axis = 1)
-    nmit = NMI(y_true,y_pred)
-    arit = ARI(y_true,y_pred)
-    acct, indt = ACC(y_true,y_pred)
-    model_weight_location = location.replace('.h5','/model_weight_epoch_{}.h5'.format(0))
-    cluster_l1.save_weights(model_weight_location)
-    print(nmit, arit, acct)
-    acc.append(acct)
-    ari.append(arit)
-    nmi.append(nmit)
-    ind.append(indt)
-    output.append(Output)
+
+    # If this is a new run
+    if not os.path.exists(location):
+        acc = []
+        ari = []
+        nmi = []
+        ind = []
+        output = []
+        
+        Output = cluster_l1.predict(X_train)
+        y_pred = np.argmax(Output,axis = 1)
+        nmit = NMI(y_true,y_pred)
+        arit = ARI(y_true,y_pred)
+        acct, indt = ACC(y_true,y_pred)
+
+        model_weight_location = location.replace('.h5','/model_weight_epoch_{}.h5'.format(0))
+        cluster_l1.save_weights(model_weight_location)
+        print(nmit, arit, acct)
+        acc.append(acct)
+        ari.append(arit)
+        nmi.append(nmit)
+        ind.append(indt)
+        output.append(Output)
+    else:
+        h5py_file = h5py.File(location,'r')
+        acc = h5py_file['acc'].value
+        nmi = h5py_file['nmi'].value
+        ari = h5py_file['ari'].value
+        ind = h5py_file['ind'].value
+        output = h5py_file['output'].value
+        h5py_file.close()
+
+        start_epoch = len(output) - 1
+        Output = output[-1]
+        y_pred = np.argmax(Output,axis = 1)
+        
+        model_weight_location = location.replace('.h5','/model_weight_epoch_{}.h5'.format(start_epoch))
+        cluster_l1.load_weights(model_weight_location)
+
+        upper = upper - (eta * start_epoch)
+        lower = lower + (eta * start_epoch)
+        print(f'start_epoch: {start_epoch}')
     
     index = np.arange(X_train.shape[0])
     index_loc = np.arange(nb)
-    for e in range(epoch):
+    for e in range(start_epoch, epoch):
         np.random.shuffle(index)
         print(lower, upper)
         def my_binary_crossentropy(y_true, y_pred):
