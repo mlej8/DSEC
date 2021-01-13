@@ -208,11 +208,11 @@ if run == 'Clustering':
         output.append(Output)
     else:
         h5py_file = h5py.File(location,'r')
-        acc = h5py_file['acc'].value
-        nmi = h5py_file['nmi'].value
-        ari = h5py_file['ari'].value
-        ind = h5py_file['ind'].value
-        output = h5py_file['output'].value
+        acc = h5py_file['acc'][:].tolist()
+        nmi = h5py_file['nmi'][:].tolist()
+        ari = h5py_file['ari'][:].tolist()
+        ind = h5py_file['ind'][:].tolist()
+        output = h5py_file['output'][:].tolist()
         h5py_file.close()
 
         start_epoch = len(output) - 1
