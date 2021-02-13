@@ -1,7 +1,7 @@
 """ File storing configurations variables """
 
 # num of workers
-num_workers = 4
+num_workers = 2
 
 # p coefficient
 p = 2
