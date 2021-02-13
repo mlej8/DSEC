@@ -16,11 +16,6 @@ from params import *
 ### Helper functions ###
 ########################
 
-def compute_loss(label, prediction):
-    """ Compute loss for a pair of patterns. """
-    # implementation of equation (2)
-    return torch.pow(torch.linalg.norm(label - prediction, ord=2, dim=0), 2)
-
 def cp_constraint(indicator_features):
     """ Implementation of equation (11): c_p constraint """
     
@@ -114,8 +109,7 @@ def dsec(dataset, dnn, model_name, initialized=False):
 
     while u >= l:
 
-        # tracking total loss
-        total_loss = 0.0
+        # track number of batch
         batch_num = 1
 
         for data,labels in dataloader:
@@ -129,15 +123,17 @@ def dsec(dataset, dnn, model_name, initialized=False):
             # initialize indicator features (forward pass)
             output = dnn(data)
 
-            # create a matrix of dot products
-            predictions = torch.clamp(torch.mm(output, torch.transpose(output, 0, 1)), 0 , 1) # added clamp function to make sure that predictions are between [0,1]
+            # create a matrix of dot products which represents the predictions
+            predictions = torch.sigmoid(torch.mm(output, torch.transpose(output, 0, 1))) 
 
             # select training data from batch using eq. 8: construct pairwise similarities matrix
-            norms = torch.linalg.norm(output, ord=2, dim=1).reshape(len(output), -1)
-            norms_mm = torch.mm(norms, torch.transpose(norms, 0, 1))
-            similarity_matrix = torch.div(predictions,norms_mm)
+            with torch.no_grad():
+                norms = torch.linalg.norm(output, ord=2, dim=1).reshape(len(output), -1)
+                norms_mm = torch.mm(norms, torch.transpose(norms, 0, 1))
+                similarity_matrix = torch.div(predictions.detach(),norms_mm)
             
             # minimizing loss using equation (12)
+            batch_loss = 0.0
             for i in range(len(similarity_matrix)):
                 for j in range(i, len(similarity_matrix)):                    
                     # get similarity for pattern pair
@@ -145,18 +141,17 @@ def dsec(dataset, dnn, model_name, initialized=False):
 
                     # pairwise labelling 
                     if similarity > u:
-                        total_loss += loss(predictions[i][j], one)
+                        batch_loss += loss(predictions[i][j], one)
                     elif similarity <= l:
-                        total_loss += loss(predictions[i][j], zero)
+                        batch_loss += loss(predictions[i][j], zero)
                     
             # backward pass to get all gradients
-            total_loss.backward()
+            batch_loss.backward()
 
             # update weights
             optimizer.step()
             
-            print('Batch: {}\tLoss: {}'.format(batch_num, total_loss/batch_size))
-            total_loss = 0.0
+            print('Batch: {}\tLoss: {}'.format(batch_num, batch_loss/batch_size))
             batch_num += 1
 
         end_time = datetime.now()
