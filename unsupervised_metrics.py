@@ -51,7 +51,7 @@ def cluster(dataset, dnn, PATH, model_name):
     labels = np.array(labels)
 
     # save model and create the models directory if not exist
-    PATH =  './results/{0}-{1}'.format(model_name, datetime.now().strftime("%b-%d-%H-%M-%S"))
+    PATH =  './results/{0}-{1}'.format(model_name, PATH.split("/")[1].split(".")[0])
     if not os.path.exists('./results'):
         os.makedirs("results")
     with open(PATH, "w") as f:
