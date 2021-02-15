@@ -22,7 +22,7 @@ def cluster(dataset, dnn, PATH, model_name):
     dnn.to(device)
 
     # set dnn in evaluation mode
-    dnn.eval()
+    # dnn.eval()
 
     # load all the images
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,shuffle=True, num_workers=num_workers)
@@ -51,7 +51,7 @@ def cluster(dataset, dnn, PATH, model_name):
     labels = np.array(labels)
 
     # save model and create the models directory if not exist
-    PATH =  './results/{0}-{1}'.format(model_name, PATH.split("/")[1].split(".")[0])
+    PATH =  './results/{0}-{1}'.format(model_name, PATH.split("/")[2])
     if not os.path.exists('./results'):
         os.makedirs("results")
     with open(PATH, "w") as f:
