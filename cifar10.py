@@ -50,28 +50,25 @@ class Net(nn.Module):
         self.bn3 = nn.BatchNorm2d(64)
         
         self.pooling1 = nn.MaxPool2d(2)
-        self.bn4 = nn.BatchNorm2d(64)
 
         self.conv4 = nn.Conv2d(64, 128, 3) 
-        self.bn5 = nn.BatchNorm2d(128)
+        self.bn4 = nn.BatchNorm2d(128)
         self.conv5 = nn.Conv2d(128, 128, 3)
-        self.bn6 = nn.BatchNorm2d(128)
+        self.bn5 = nn.BatchNorm2d(128)
         self.conv6 = nn.Conv2d(128, 128, 3)
-        self.bn7 = nn.BatchNorm2d(128)
+        self.bn6 = nn.BatchNorm2d(128)
        
         self.pooling2 = nn.MaxPool2d(2)
-        self.bn8 = nn.BatchNorm2d(128)
 
         self.conv7 = nn.Conv2d(128, 10, 1) 
-        self.bn9 = nn.BatchNorm2d(10)
+        self.bn7 = nn.BatchNorm2d(10)
 
         self.global_averaging = nn.AvgPool2d(3) # global averaging
-        self.bn10 = nn.BatchNorm2d(10)
         
         self.fc1 = nn.Linear(in_features=10, out_features=10)
-        self.bn11 = nn.BatchNorm1d(10)
+        self.bn8 = nn.BatchNorm1d(10)
         self.fc2 = nn.Linear(in_features=10, out_features=len(trainset.classes))
-        self.bn12 = nn.BatchNorm1d(10)
+        self.bn9 = nn.BatchNorm1d(10)
         
         self.constraint_layer = cp_constraint
 
@@ -80,21 +77,21 @@ class Net(nn.Module):
         x = F.relu(self.bn2(self.conv2(x)))
         x = F.relu(self.bn3(self.conv3(x)))
         
-        x = self.bn4(self.pooling1(x))
+        x = self.pooling1(x)
 
-        x = F.relu(self.bn5(self.conv4(x)))
-        x = F.relu(self.bn6(self.conv5(x)))
-        x = F.relu(self.bn7(self.conv6(x)))
+        x = F.relu(self.bn4(self.conv4(x)))
+        x = F.relu(self.bn5(self.conv5(x)))
+        x = F.relu(self.bn6(self.conv6(x)))
         
-        x = self.bn8(self.pooling2(x))
+        x = self.pooling2(x)
         
-        x = F.relu(self.bn9(self.conv7(x)))
-        x = self.bn10(self.global_averaging(x))
+        x = F.relu(self.bn7(self.conv7(x)))
+        x = self.global_averaging(x)
         
         x = torch.flatten(x, 1)
         
-        x = F.relu(self.bn11(self.fc1(x)))
-        x = F.relu(self.bn12(self.fc2(x)))
+        x = F.relu(self.bn8(self.fc1(x)))
+        x = F.relu(self.bn9(self.fc2(x)))
         output = self.constraint_layer(x)
         
         return output
