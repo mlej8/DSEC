@@ -12,6 +12,8 @@ import torch.nn.functional as F
 import torchvision
 import torchvision.transforms as transforms
 
+from data_augmentation import GaussianNoise
+
 from custom_dataset import Dataset
 
 # Load the MNIST training and test datasets using torchvision
@@ -29,7 +31,15 @@ stds = (np.std(d[:,:,:]),)
 
 # The output of torchvision datasets are PILImage images of range [0, 1]. We transform them to Tensors and normalize using mean and std of the entire dataset. 
 transform = transforms.Compose([transforms.ToTensor(), # transform to tensor
-                                transforms.Normalize(means, stds) 
+                                transforms.Normalize(means, stds),
+
+                                # data augmentation
+                                GaussianNoise(mean=0.0,std=0.001), # gaussian noise
+                                transforms.RandomRotation(5), # Random rotation from [-30,30]
+                                transforms.RandomAffine(degrees=0, scale=(0.9,1.1), translate=(0.18,0.18)),
+                                transforms.RandomHorizontalFlip(p=0.5)
+                                # TODO: Randomly shift the channel in [0.9, 1.1]
+                                # TODO: Randomly zoom the image in [0.85, 1.15]
                                 ])
 
 mnist = Dataset(data, labels, trainset.classes, transform)

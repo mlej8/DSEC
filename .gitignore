@@ -55,5 +55,3 @@ Temporary Items
 # ignore env and data
 *data/
 *env/
-
-command

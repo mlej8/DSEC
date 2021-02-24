@@ -10,6 +10,8 @@ import torch.nn.functional as F
 import torchvision
 import torchvision.transforms as transforms
 
+from data_augmentation import GaussianNoise
+
 from custom_dataset import Dataset
 
 # Load the CIFAR10 training and test datasets using torchvision
@@ -32,7 +34,15 @@ However, we concatenated both train and test sets into one single dataset.
 Therefore, we find the mean and variance for each channel and normalize. 
 """
 transform = transforms.Compose([transforms.ToTensor(), # transform to tensor
-                                transforms.Normalize(mean=means,std=stds) 
+                                transforms.Normalize(means, stds),
+
+                                # data augmentation
+                                GaussianNoise(mean=0.0,std=0.001), # gaussian noise
+                                transforms.RandomRotation(5), # Random rotation from [-30,30]
+                                transforms.RandomAffine(degrees=0, scale=(0.9,1.1), translate=(0.18,0.18)),
+                                transforms.RandomHorizontalFlip(p=0.5)
+                                # TODO: Randomly shift the channel in [0.9, 1.1]
+                                # TODO: Randomly zoom the image in [0.85, 1.15]
                                 ])
 
 cifar10 = Dataset(data, labels, trainset.classes, transform)
