@@ -1,5 +1,7 @@
 from __future__ import print_function
 
+import numpy as np
+
 from dsec import dsec, cp_constraint
 from unsupervised_metrics import cluster
 
@@ -10,16 +12,27 @@ import torch.nn.functional as F
 import torchvision
 import torchvision.transforms as transforms
 
-# The output of torchvision datasets are PILImage images of range [0, 1]. We transform them to Tensors and normalize range to [-1, 1]. 
-transform = transforms.Compose([transforms.ToTensor(), # transform to tensor
-                                transforms.Normalize((0.5, ), (0.5,)) # normalize range to [-1, 1] with mean and variance of 0.5
-                                ])
+from custom_dataset import Dataset
 
 # Load the MNIST training and test datasets using torchvision
-trainset = torchvision.datasets.MNIST(root='./mnistdata', train=True, download=True, transform=transform)
+trainset = torchvision.datasets.MNIST(root='./mnistdata', train=True, download=True, transform=None)
 
 # Load test set using torchvision
-testset = torchvision.datasets.MNIST(root='./mnistdata', train=False,download=True, transform=transform)
+testset = torchvision.datasets.MNIST(root='./mnistdata', train=False, download=True, transform=None)
+
+# computing the mean and variance of each channel
+data = np.concatenate((trainset.data, testset.data), axis=0)
+labels = np.concatenate((trainset.targets, testset.targets), axis=0)
+d = data/255.0
+means = (np.mean(d[:,:,:]),)
+stds = (np.std(d[:,:,:]),)
+
+# The output of torchvision datasets are PILImage images of range [0, 1]. We transform them to Tensors and normalize using mean and std of the entire dataset. 
+transform = transforms.Compose([transforms.ToTensor(), # transform to tensor
+                                transforms.Normalize(means, stds) 
+                                ])
+
+mnist = Dataset(data, labels, trainset.classes, transform)
 
 ###########
 ### DNN ###
@@ -84,5 +97,5 @@ class Net(nn.Module):
 
 model_name = "mnist"
 model_path = "models/mnist-Nov-28-03-16-59.pth"
-model_path = dsec(trainset, Net(), model_name=model_name)
-cluster(trainset, Net(), model_path, model_name=model_name)
+model_path = dsec(mnist, Net(), model_name=model_name)
+cluster(mnist, Net(), model_path, model_name=model_name)
