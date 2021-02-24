@@ -21,17 +21,18 @@ testset = torchvision.datasets.CIFAR10(root='./cifar10data', train=False,downloa
 # computing the mean and variance of each channel
 data = np.concatenate((trainset.data, testset.data), axis=0)
 labels = np.concatenate((trainset.targets, testset.targets), axis=0)
-means = (np.mean(data[:,:,:,0]),np.mean(data[:,:,:,1]),np.mean(data[:,:,:,2]))
-variances = (np.var(data[:,:,:,0]),np.var(data[:,:,:,1]),np.var(data[:,:,:,2]))
+d = data/255.0 # put data between 0 and 1
+means = (np.mean(d[:,:,:,0]),np.mean(d[:,:,:,1]),np.mean(d[:,:,:,2]))
+stds = (np.std(d[:,:,:,0]),np.std(d[:,:,:,1]),np.std(d[:,:,:,2]))
 
 """
 The output of torchvision datasets are PILImage images of range [0, 1]. 
-We transform them to Tensors and normalize range to [-1, 1].
+We transform them to Tensors with values [0,1].
 However, we concatenated both train and test sets into one single dataset. 
 Therefore, we find the mean and variance for each channel and normalize. 
 """
 transform = transforms.Compose([transforms.ToTensor(), # transform to tensor
-                                transforms.Normalize(means,variances) # normalize range to [-1, 1]
+                                transforms.Normalize(mean=means,std=stds) 
                                 ])
 
 cifar10 = Dataset(data, labels, trainset.classes, transform)
