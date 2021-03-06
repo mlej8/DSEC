@@ -16,11 +16,6 @@ from params import *
 ### Helper functions ###
 ########################
 
-def compute_loss(prediction, label):
-    """ Compute loss for a pair of patterns. """
-    # implementation of equation (2)
-    return torch.pow(torch.linalg.norm(label - prediction, ord=2, dim=0), 2)
-
 def cp_constraint(indicator_features):
     """ Implementation of equation (11): c_p constraint """
     
@@ -104,6 +99,9 @@ def dsec(dataset, dnn, model_name, initialized=False):
     # set dnn in training mode
     dnn.train()
 
+    # create BCE loss (does not follow paper but follows their code)
+    loss = nn.BCELoss()
+
     # create folder for storing weights if it does not exist
     weights_folder = './models/{}/{}'.format(model_name, datetime.now().strftime("%b-%d-%H-%M-%S")) 
     if not os.path.exists(weights_folder):
@@ -126,7 +124,7 @@ def dsec(dataset, dnn, model_name, initialized=False):
             output = dnn(data)
 
             # create a matrix of dot products which represents the predictions
-            predictions = torch.mm(output, torch.transpose(output, 0, 1))
+            predictions = torch.sigmoid(torch.mm(output, torch.transpose(output, 0, 1)))
 
             # select training data from batch using eq. 8: construct pairwise similarities matrix
             with torch.no_grad():
@@ -143,9 +141,9 @@ def dsec(dataset, dnn, model_name, initialized=False):
 
                     # pairwise labelling 
                     if similarity > u:
-                        batch_loss += compute_loss(predictions[i][j], one)
+                        batch_loss += loss(predictions[i][j], one)
                     elif similarity <= l:
-                        batch_loss += compute_loss(predictions[i][j], zero)
+                        batch_loss += loss(predictions[i][j], zero)
                     
             # backward pass to get all gradients
             batch_loss.backward()
