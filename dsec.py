@@ -143,7 +143,7 @@ def dsec(dataset, dnn, model_name, initialized=False):
             # update weights
             optimizer.step()
             
-            print('Batch: {}\tLoss: {}'.format(batch_num, batch_loss/batch_size))
+            print('Batch: {}\tLoss: {}'.format(batch_num, batch_loss))
             batch_num += 1
 
         end_time = datetime.now()

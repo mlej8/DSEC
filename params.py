@@ -23,3 +23,8 @@ e = 50
 
 # learning rate for DSEC
 lr = (u-l)/(2*e)
+
+#number of epochs for pretraining
+pretrain_epoch = 5
+
+pretrain_batch_size = 100

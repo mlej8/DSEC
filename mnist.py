@@ -1,9 +1,10 @@
 from __future__ import print_function
-
+import os
 import numpy as np
 
 from dsec import dsec, cp_constraint
-from unsupervised_metrics import cluster
+from pretrain import pretrain
+from unsupervised_metrics import cluster, pretrain_cluster
 
 import torch
 import torch.nn as nn
@@ -16,6 +17,12 @@ from data_augmentation import GaussianNoise
 
 from custom_dataset import Dataset
 
+# Code to download MNST, uncomment the following code if the dataset is unable to download
+# from six.moves import urllib
+# opener = urllib.request.build_opener()
+# opener.addheaders = [('User-agent', 'Mozilla/5.0')]
+# urllib.request.install_opener(opener)
+
 # Load the MNIST training and test datasets using torchvision
 trainset = torchvision.datasets.MNIST(root='./mnistdata', train=True, download=True, transform=None)
 
@@ -25,13 +32,14 @@ testset = torchvision.datasets.MNIST(root='./mnistdata', train=False, download=T
 # computing the mean and variance of each channel
 data = np.concatenate((trainset.data, testset.data), axis=0)
 labels = np.concatenate((trainset.targets, testset.targets), axis=0)
+# data = data.astype('float32')
 d = data/255.0
 means = (np.mean(d[:,:,:]),)
 stds = (np.std(d[:,:,:]),)
 
 # The output of torchvision datasets are PILImage images of range [0, 1]. We transform them to Tensors and normalize using mean and std of the entire dataset. 
 transform = transforms.Compose([transforms.ToTensor(), # transform to tensor
-                                transforms.Normalize(means, stds),
+                                # transforms.Normalize(means, stds),
 
                                 # data augmentation
                                 GaussianNoise(mean=0.0,std=0.001), # gaussian noise
@@ -42,7 +50,19 @@ transform = transforms.Compose([transforms.ToTensor(), # transform to tensor
                                 # TODO: Randomly zoom the image in [0.85, 1.15]
                                 ])
 
-mnist = Dataset(data, labels, trainset.classes, transform)
+DA_transform = transforms.Compose([
+                                # data augmentation
+                                transforms.ToPILImage(mode=None),
+                                transforms.RandomAffine(degrees=20, scale=(0.85,1.15), translate=(0.18,0.18), fillcolor=0),
+                                transforms.ToTensor(), # transform to tensor
+                                ])
+
+simple_transform = transforms.Compose([transforms.ToTensor()])
+
+mnist = Dataset(data, labels, trainset.classes, DA_transform)
+
+non_augmented_mnist = Dataset(data, labels, trainset.classes, simple_transform)
+
 
 ###########
 ### DNN ###
@@ -105,7 +125,28 @@ class Net(nn.Module):
         output = self.constraint_layer(x)
         return output
 
-model_name = "mnist"
-model_path = "models/mnist-Nov-28-03-16-59.pth"
-model_path = dsec(mnist, Net(), model_name=model_name)
-cluster(mnist, Net(), model_path, model_name=model_name)
+
+"""
+Simple Net
+"""
+class SimpleNet(nn.Module):
+    def __init__(self):
+        super(SimpleNet, self).__init__()
+        self.linear1 = nn.Linear(in_features=(1*28*28), out_features=512)
+        self.linear2 = nn.Linear(in_features=512, out_features=256)
+        self.batchNorm = nn.BatchNorm1d(256,eps=0.001, momentum=0.99, affine=True, track_running_stats=False)
+
+    def forward(self, x):
+        x = x.reshape(x.shape[0], -1)
+        x = F.relu(self.linear1(x))
+        x = F.relu(self.linear2(x))
+        output = self.batchNorm(x)
+        return output
+
+
+model_name = "mnist_dsec"
+model_path = './models/mnist_dsec/Mar-29-21-28-37/pretrain/epoch10.pth'
+model_path = pretrain(mnist, non_augmented_mnist, Net(), model_name=model_name, initialized=True, pretrained_model=model_path)
+# model_path = dsec(mnist, Net(), model_name=model_name)
+pretrain_cluster(non_augmented_mnist, Net(), model_path, model_name=model_name)
+
