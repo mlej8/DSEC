@@ -25,6 +25,6 @@ e = 50
 lr = (u-l)/(2*e)
 
 #number of epochs for pretraining
-pretrain_epoch = 5
+pretrain_epoch = 15
 
 pretrain_batch_size = 100

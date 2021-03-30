@@ -5,18 +5,8 @@ import os
 from datetime import datetime
 from params import *
 from custom_dataset import Dataset
+from utils import weights_init
 
-def weights_init(layer):
-    """ Initialize weights using normal initialization strategy """
-    if isinstance(layer, torch.nn.Conv2d):
-        torch.nn.init.normal_(layer.weight.data)
-        if layer.bias is not None:
-            torch.nn.init.zeros_(layer.bias.data)
-
-    if isinstance(layer, torch.nn.Linear):
-        torch.nn.init.xavier_uniform_(layer.weight)
-        if layer.bias is not None:
-            torch.nn.init.zeros_(layer.bias)
 
 
 def pretrain(augmented_dataset,dataset, dnn, model_name, initialized=False, pretrained_model=None):

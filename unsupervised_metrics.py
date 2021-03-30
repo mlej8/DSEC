@@ -51,14 +51,21 @@ def cluster(dataset, dnn, PATH, model_name):
     predictions = np.array(predictions)
     labels = np.array(labels)
 
+    nmi = metrics.normalized_mutual_info_score(labels_true=labels, labels_pred=predictions)
+    ari = metrics.adjusted_rand_score(labels_true=labels, labels_pred=predictions)
+    accuracy = acc(labels, predictions)
+
     # save model and create the models directory if not exist
-    PATH =  './results/{0}-{1}'.format(model_name, PATH.split("/")[2])
-    if not os.path.exists('./results'):
-        os.makedirs("results")
-    with open(PATH, "w") as f:
-        f.write(f'NMI of DSEC {model_name}: {metrics.normalized_mutual_info_score(labels_true=labels, labels_pred=predictions)}\n')
-        f.write(f'ARI of DSEC {model_name}: {metrics.adjusted_rand_score(labels_true=labels, labels_pred=predictions)}\n')  
-        f.write(f'ACC of DSEC {model_name}: {acc(labels, predictions)}')  
+    PATH =  './results/{0}/{1}'.format(model_name, PATH.split("/")[3])
+    if not os.path.exists(PATH):
+        os.makedirs(PATH)
+    with open(PATH + '/train', "w") as f:
+        f.write(f'NMI of DSEC {model_name}: {nmi}\n')
+        f.write(f'ARI of DSEC {model_name}: {ari}\n')  
+        f.write(f'ACC of DSEC {model_name}: {accuracy}')  
+    print(f'NMI of DSEC {model_name}: {nmi}')
+    print(f'ARI of DSEC {model_name}: {ari}')
+    print(f'ACC of DSEC {model_name}: {accuracy}')
 
 def acc(labels, predictions):
     """ Implementation of clustering accuracy """
@@ -128,10 +135,10 @@ def pretrain_cluster(dataset, dnn, PATH, model_name):
     ari = metrics.adjusted_rand_score(labels_true=labels, labels_pred=predictions)
     accuracy = acc(labels, predictions)
     # save model and create the models directory if not exist
-    PATH =  './results/{0}-{1}'.format(model_name, PATH.split("/")[3])
-    if not os.path.exists('./results'):
-        os.makedirs("results")
-    with open(PATH, "w") as f:
+    PATH =  './results/{0}/{1}'.format(model_name, PATH.split("/")[3])
+    if not os.path.exists(PATH):
+        os.makedirs(PATH)
+    with open(PATH + '/pretrain', "w") as f:
         f.write(f'NMI of DSEC {model_name}: {nmi}\n')
         f.write(f'ARI of DSEC {model_name}: {ari}\n')  
         f.write(f'ACC of DSEC {model_name}: {accuracy}')  

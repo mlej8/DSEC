@@ -5,6 +5,7 @@ import torch.nn as nn
 import pickle
 import os
 from params import *
+from utils import weights_init
 """
 @authors: Michael Li and William Zhang
 @email: er.li@mail.mcgill.ca 
@@ -33,24 +34,11 @@ def cp_constraint(indicator_features):
 
     return torch.div(intermediate, intermediate_norm)
 
-def weights_init(layer):
-    """ Initialize weights using normal initialization strategy """
-    if isinstance(layer, torch.nn.Conv2d):
-        torch.nn.init.normal_(layer.weight.data)
-        if layer.bias is not None:
-            torch.nn.init.zeros_(layer.bias.data)
-
-    if isinstance(layer, torch.nn.Linear):
-        torch.nn.init.normal_(layer.weight.data)
-        if layer.bias is not None:
-            torch.nn.init.zeros_(layer.bias.data)
-
-
 ########################
 ###  DSEC algorithm  ###
 ########################
 
-def dsec(dataset, dnn, model_name, initialized=False):
+def dsec(dataset, dnn, model_name, initialized=False, pretrained_model=None):
     """ Takes as input a PyTorch dataset and a DNN model """
     
     # log which model we are running
@@ -70,6 +58,20 @@ def dsec(dataset, dnn, model_name, initialized=False):
         # initialize weights using normalized Gaussian initialization strategy 
         for key in dnn._modules:
             weights_init(dnn._modules[key])
+
+        # create folder for storing weights if it does not exist
+        weights_folder = './models/{}/{}'.format(model_name, datetime.now().strftime("%b-%d-%H-%M-%S")) 
+        if not os.path.exists(weights_folder):
+            os.makedirs(weights_folder)
+
+
+    else:
+        dnn.load_state_dict(torch.load(pretrained_model, map_location=torch.device('cpu')))
+        path = pretrained_model.split("/")
+        new_path = path[:-2] + ['train']
+        weights_folder = "/".join(new_path)
+        if not os.path.exists(weights_folder):
+            os.makedirs(weights_folder)
 
     # look if running multiple GPUs
     num_gpus = torch.cuda.device_count()
@@ -102,15 +104,11 @@ def dsec(dataset, dnn, model_name, initialized=False):
     # create BCE loss (does not follow paper but follows their code)
     criterion = nn.BCELoss()
 
-    # create folder for storing weights if it does not exist
-    weights_folder = './models/{}/{}'.format(model_name, datetime.now().strftime("%b-%d-%H-%M-%S")) 
-    if not os.path.exists(weights_folder):
-        os.makedirs(weights_folder)
-
     while u >= l:
 
         # track number of batch
         batch_num = 1
+        epoch_loss = 0
 
         for data,labels in dataloader:
 
@@ -143,11 +141,12 @@ def dsec(dataset, dnn, model_name, initialized=False):
             # update weights
             optimizer.step()
             
-            print('Batch: {}\tLoss: {}'.format(batch_num, batch_loss))
+            # print('Batch: {}\tLoss: {}'.format(batch_num, batch_loss))
             batch_num += 1
+            epoch_loss += batch_loss
 
         end_time = datetime.now()
-        print("Epoch {}: u ({}) and l ({}) done in {}".format(epoch,u,l, end_time - start_time))
+        print("Epoch {}: Loss: {} u ({}) and l ({}) done in {}".format(epoch,epoch_loss/batch_num, u, l, end_time - start_time))
         start_time = end_time
 
         # save weights

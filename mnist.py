@@ -55,6 +55,7 @@ DA_transform = transforms.Compose([
                                 transforms.ToPILImage(mode=None),
                                 transforms.RandomAffine(degrees=20, scale=(0.85,1.15), translate=(0.18,0.18), fillcolor=0),
                                 transforms.ToTensor(), # transform to tensor
+                                # transforms.Normalize(means, stds)
                                 ])
 
 simple_transform = transforms.Compose([transforms.ToTensor()])
@@ -145,8 +146,9 @@ class SimpleNet(nn.Module):
 
 
 model_name = "mnist_dsec"
-model_path = './models/mnist_dsec/Mar-29-21-28-37/pretrain/epoch10.pth'
-model_path = pretrain(mnist, non_augmented_mnist, Net(), model_name=model_name, initialized=True, pretrained_model=model_path)
-# model_path = dsec(mnist, Net(), model_name=model_name)
+# model_path = './models/mnist_dsec/Mar-29-21-28-37/pretrain/epoch10.pth'
+model_path = pretrain(mnist, non_augmented_mnist, Net(), model_name=model_name, initialized=False, pretrained_model=None)
 pretrain_cluster(non_augmented_mnist, Net(), model_path, model_name=model_name)
+model_path = dsec(mnist, Net(), model_name=model_name, initialized=True, pretrained_model=model_path)
+cluster(non_augmented_mnist, Net(), model_path, model_name=model_name)
 
