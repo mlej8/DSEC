@@ -17,6 +17,14 @@ In order to add a job to the queue: `sbatch <bash script> <python script to pass
 
 In order to cancel a job in the queue: `scancel <job_id>`
 
+# Logs
+Our current best model utilizes DA with 15 epochs, with normalization followed by DSEC without normalization.
+
+It would be a good idea to test the model with normal weight initialization for conv2d layers and xavier_uniform for linear layers.
+
+Definitely also a good idea to test more epochs for dsec
+
+
 ## Bibtex
 Credits to original author: Jianlong Chang (jianlong.chang@nlpr.ia.ac.cn)
 ```

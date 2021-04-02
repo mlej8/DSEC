@@ -19,7 +19,7 @@ l = 0.80
 optimizer_lr = 0.001
 
 # number of epochs
-e = 50
+e = 100
 
 # learning rate for DSEC
 lr = (u-l)/(2*e)

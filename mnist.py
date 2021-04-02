@@ -146,7 +146,7 @@ class SimpleNet(nn.Module):
 
 
 model_name = "mnist_dsec"
-# model_path = './models/mnist_dsec/Mar-29-21-28-37/pretrain/epoch10.pth'
+model_path = './models/mnist_dsec/Mar-29-23-00-07/pretrain/mnist_dsec.pth'
 model_path = pretrain(mnist, non_augmented_mnist, Net(), model_name=model_name, initialized=False, pretrained_model=None)
 pretrain_cluster(non_augmented_mnist, Net(), model_path, model_name=model_name)
 model_path = dsec(mnist, Net(), model_name=model_name, initialized=True, pretrained_model=model_path)
